@@ -53,6 +53,7 @@ func (cmd *Command) Execute(_ context.Context,
 	var choice string
 	cookie := make([]byte, 12)
 	natrium.RandBytes(cookie)
+	lsnr, _ := net.ListenTCP("tcp", nil)
 	for {
 		// our first step is to guess our own IP
 	lRETRY:
@@ -67,7 +68,6 @@ func (cmd *Command) Execute(_ context.Context,
 		resp.Body.Close()
 		myip := strings.Trim(string(buf.Bytes()), "\n ")
 		log.Println("my own IP address guessed:", myip)
-		lsnr, _ := net.ListenTCP("tcp", nil)
 		// we obtain the exit info first
 		resp, err = myHTTP.Get("http://binder.geph.io:8080/exit-info")
 		if err != nil {

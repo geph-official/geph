@@ -76,7 +76,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 	var entries []entryInfo
 	for ext, kee := range nds {
 		req, _ := http.NewRequest("POST",
-			fmt.Sprintf("https://%v/exits/%v/get-nodes", cFRONT, ext), nil)
+			fmt.Sprintf("https://%v/exits/%v:8081/get-nodes", cFRONT, ext), nil)
 		req.Host = cHOST
 		var resp *http.Response
 		resp, err = myHTTP.Do(req)

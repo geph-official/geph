@@ -66,7 +66,7 @@ func (cmd *Command) Execute(_ context.Context,
 					return
 				}
 				defer conn.Close()
-				tinysocks.CompleteRequest(0x00, conn)
+				tinysocks.CompleteRequest(0x00, clnt)
 				conn.Write([]byte{byte(len(dest))})
 				conn.Write([]byte(dest))
 				// forward
@@ -82,8 +82,6 @@ func (cmd *Command) Execute(_ context.Context,
 	}()
 	// the other constantly revives the stuff
 	for {
-		sl.Lock()
-		ss = nil
 	retry:
 		nss, err := cmd.getSubstrate()
 		if err != nil {
@@ -91,6 +89,7 @@ func (cmd *Command) Execute(_ context.Context,
 			time.Sleep(time.Second)
 			goto retry
 		}
+		sl.Lock()
 		ss = nss
 		sl.Unlock()
 		nss.Tomb().Wait()

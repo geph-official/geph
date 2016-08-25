@@ -23,4 +23,4 @@ The hex-encoded signature of the entire response is put in the header `X-Geph-Si
 
 Clients often cannot directly connect to the exit nodes since they are blocked. Thus, the binder hosts a proxy service.
 
-All URLs like `http://binder.geph.ch/exits/noram.exits.geph.ch/...` serve as reverse proxies to `http://noram.exits.geph.ch/...`.
+All URLs like `http://binder.geph.io/exits/noram.exits.geph.ch/...` serve as reverse proxies to `http://noram.exits.geph.io/...`.

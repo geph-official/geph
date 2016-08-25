@@ -2,7 +2,9 @@ package exit
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 )
@@ -36,4 +38,13 @@ func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 	tosend.Nodes = cmd.edb.GetNodes(0)
 	bts, _ := json.Marshal(&tosend)
 	w.Write(bts)
+}
+
+func (cmd *Command) handTestSpeed(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Length", fmt.Sprintf("%v", 1024*1024))
+	for i := 0; i < 256; i++ {
+		lol := make([]byte, 4096)
+		rand.Read(lol)
+		w.Write(lol)
+	}
 }

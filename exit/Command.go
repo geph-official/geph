@@ -50,6 +50,7 @@ func (cmd *Command) Execute(_ context.Context,
 	go cmd.doProxy()
 	http.HandleFunc("/update-node", cmd.handUpdateNode)
 	http.HandleFunc("/get-nodes", cmd.handGetNodes)
-	http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/test-speed", cmd.handTestSpeed)
+	http.ListenAndServe(":8081", nil)
 	return 0
 }

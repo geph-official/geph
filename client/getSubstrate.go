@@ -41,6 +41,7 @@ func (cmd *Command) getExitNodes() (nds map[string][]byte, err error) {
 		Expires string
 		Exits   map[string][]byte
 	}
+	fmt.Println(string(buf.Bytes()))
 	err = json.Unmarshal(buf.Bytes(), &exinf)
 	if err != nil {
 		log.Println("WARNING: bad json encountered in exit info:", err.Error())
@@ -86,7 +87,10 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 			Expires string
 			Nodes   map[string][]byte
 		}
-		err = json.NewDecoder(resp.Body).Decode(&lol)
+		buf := new(bytes.Buffer)
+		io.Copy(buf, resp.Body)
+		fmt.Println(string(buf.Bytes()))
+		err = json.NewDecoder(buf).Decode(&lol)
 		if err != nil {
 			resp.Body.Close()
 			return

@@ -51,7 +51,7 @@ func (cmd *Command) Execute(_ context.Context,
 	args ...interface{}) subcommands.ExitStatus {
 	// we enter the loop
 	var choice string
-	cookie := make([]byte, 10)
+	cookie := make([]byte, 12)
 	natrium.RandBytes(cookie)
 	for {
 		// our first step is to guess our own IP

@@ -2,6 +2,7 @@ package binder
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -55,7 +56,7 @@ func (cmd *Command) Execute(_ context.Context,
 			frags := strings.Split(r.URL.Path, "/")
 			r.Host = frags[2]
 			r.URL.Scheme = "http"
-			r.URL.Host = frags[2]
+			r.URL.Host = fmt.Sprintf("%v:8081", frags[2])
 			r.URL.Path = strings.Join(frags[2:], "/")
 		},
 	}

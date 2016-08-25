@@ -4,6 +4,8 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"strings"
 
 	"github.com/ProjectNiwl/natrium"
 	"github.com/google/subcommands"
@@ -47,6 +49,19 @@ func (cmd *Command) Execute(_ context.Context,
 	log.Println("Binder started; public key is", natrium.HexEncode(cmd.identity.PublicKey()))
 	// run the stuff
 	http.HandleFunc("/exit-info", cmd.handExitInfo)
-	http.ListenAndServe(":8080", nil)
+	rp := &httputil.ReverseProxy{
+		Director: func(r *http.Request) {
+			log.Println("reverse proxying", r.URL)
+			frags := strings.Split(r.URL.Path, "/")
+			r.Host = frags[2]
+			r.URL.Scheme = "http"
+			r.URL.Host = frags[2]
+			r.URL.Path = strings.Join(frags[2:], "/")
+		},
+	}
+	http.Handle("/exits/", rp)
+	if http.ListenAndServe(":8080", nil) != nil {
+		return -1
+	}
 	return 0
 }

@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -18,7 +19,7 @@ import (
 var myHTTP = &http.Client{
 	Transport: &http.Transport{
 		TLSHandshakeTimeout: time.Second * 10,
-		DisableKeepAlives:   true,
+		//DisableKeepAlives:   true,
 	},
 	Timeout: time.Second * 10,
 }
@@ -75,7 +76,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 	// step 2: swamp the exit nodes in parallel to get info
 	var entries []entryInfo
 	for ext, kee := range nds {
-		req, _ := http.NewRequest("POST",
+		req, _ := http.NewRequest("GET",
 			fmt.Sprintf("https://%v/exits/%v:8081/get-nodes", cFRONT, ext), nil)
 		req.Host = cHOST
 		var resp *http.Response
@@ -89,11 +90,12 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		}
 		buf := new(bytes.Buffer)
 		io.Copy(buf, resp.Body)
-		fmt.Println(string(buf.Bytes()))
+		log.Println(string(buf.Bytes()) + "z")
 		err = json.NewDecoder(buf).Decode(&lol)
 		if err != nil {
+			fmt.Println("WOW")
 			resp.Body.Close()
-			return
+			continue
 		}
 		resp.Body.Close()
 		for addr, cook := range lol.Nodes {
@@ -103,6 +105,9 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 				ExitKey: natrium.EdDSAPublic(kee),
 			})
 		}
+	}
+	if len(entries) == 0 {
+		err = errors.New("nothing worked at all")
 	}
 	// step 3: randomly pick one
 	log.Println("TODO: currently RANDOMLY picking an entry node due to lack of geolocation!")

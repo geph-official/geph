@@ -44,6 +44,7 @@ func (cmd *Command) doProxy() {
 			if err != nil {
 				return
 			}
+			log.Println("requested to proxy", string(addrbts))
 			// resolve and connect
 			addr, err := net.ResolveTCPAddr("tcp", string(addrbts))
 			if err != nil {

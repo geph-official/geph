@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"strings"
 	"time"
-
-	tomb "gopkg.in/tomb.v2"
 
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
@@ -72,16 +71,16 @@ lRETRY:
 		}
 		io.Copy(buf, resp.Body)
 		resp.Body.Close()
-		var resp struct {
+		var exinf struct {
 			Expires string
 			Exits   map[string][]byte
 		}
-		err = json.Unmarshal(buf.Bytes(), &resp)
+		err = json.Unmarshal(buf.Bytes(), &exinf)
 		if err != nil {
 			log.Println("WARNING: bad json encountered in exit info, ignoring")
 			continue
 		}
-		expTime, err := time.Parse(time.RFC3339, resp.Expires)
+		expTime, err := time.Parse(time.RFC3339, exinf.Expires)
 		if err != nil {
 			log.Println("WARNING: bad time format in exit info, ignoring")
 			continue
@@ -92,13 +91,23 @@ lRETRY:
 		}
 		log.Println("TODO: not checking sigs for exit info yet!")
 		// we then see if our choice is in the given exits
-		_, ok := resp.Exits[choice]
+		_, ok := exinf.Exits[choice]
 		if !ok {
 			log.Println("beginning to race between the available exits...")
-			tmb := new(tomb.Tomb)
-			for dest, _ := range resp.Exits {
-
+			for dest := range exinf.Exits {
+				t1 := time.Now()
+				resp, err = myHTTP.Get(fmt.Sprintf("http://%v:8080/test-speed", dest))
+				if err != nil {
+					log.Println("speed test totally failed for", dest)
+				}
+				t2 := time.Now()
+				io.Copy(buf, resp.Body)
+				resp.Body.Close()
+				t3 := time.Now()
+				log.Println(dest, "has latency", t2.Sub(t1),
+					"and throughput", 8/t3.Sub(t2).Seconds(), "Mbps")
 			}
+			return -1
 		}
 	}
 }

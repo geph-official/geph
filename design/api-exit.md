@@ -7,7 +7,7 @@ Unencrypted HTTP (with signing) is used for control data, while KiSS is used for
 An entry node can post info to `POST /update-node`. The payload is:
 
     {
-        "Address": host:port,
+        "Addr": host:port,
         "Cookie": 96-bit obfuscation cookie in Base64,
     }
 

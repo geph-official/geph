@@ -1,6 +1,7 @@
 package entry
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -8,12 +9,12 @@ import (
 	"github.com/bunsim/kiss"
 )
 
-func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest string) {
+func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest *string) {
 	log.Println("obfuscation listening on", lsnr.Addr(), "forwards to", dest)
 	for {
 		raw, err := lsnr.Accept()
 		if err != nil {
-			panic(err.Error())
+			return
 		}
 		go func() {
 			defer raw.Close()
@@ -22,9 +23,9 @@ func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest string) {
 				return
 			}
 			defer clnt.Close()
-			remote, err := net.Dial("tcp", dest)
+			remote, err := net.Dial("tcp", fmt.Sprintf("%v:2378", *dest))
 			if err != nil {
-				log.Println("WARNING: failed to forward to", dest, ":", err.Error())
+				log.Println("WARNING: failed to forward to", *dest, ":", err.Error())
 				return
 			}
 			defer remote.Close()

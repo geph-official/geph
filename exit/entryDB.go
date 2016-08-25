@@ -43,7 +43,7 @@ func newEntryDB() *entryDB {
 }
 
 func (edb *entryDB) AddNode(addr string, cookie []byte) error {
-	wire, err := net.Dial("tcp", addr)
+	wire, err := net.DialTimeout("tcp", addr, time.Second*5)
 	if err != nil {
 		return err
 	}

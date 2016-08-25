@@ -54,8 +54,8 @@ func (cmd *Command) Execute(_ context.Context,
 		Director: func(r *http.Request) {
 			frags := strings.Split(r.URL.Path, "/")
 			r.URL.Scheme = "http"
-			r.URL.Host = fmt.Sprintf("%v:8081", frags[2])
-			r.URL.Path = strings.Join(frags[3:], "/")
+			r.URL.Host = fmt.Sprintf("%v", frags[2])
+			r.URL.Path = "/" + strings.Join(frags[3:], "/")
 			r.Host = r.URL.Host
 			log.Println("reverse proxying", r.URL)
 		},

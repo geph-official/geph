@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"math/rand"
 	"os"
 
 	"golang.org/x/net/context"
 
+	"github.com/ProjectNiwl/natrium"
 	"github.com/bunsim/geph/binder"
 	"github.com/bunsim/geph/client"
 	"github.com/bunsim/geph/entry"
@@ -14,6 +16,8 @@ import (
 )
 
 func main() {
+	// seed the insecure RNG from the secure one to prevent repeats
+	rand.Seed(int64(natrium.RandUint32()))
 	subcommands.Register(subcommands.HelpCommand(), "")
 	subcommands.Register(subcommands.FlagsCommand(), "")
 	subcommands.Register(subcommands.CommandsCommand(), "")

@@ -30,6 +30,7 @@ func (cmd *Command) handUpdateNode(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Cache-Control", "no-cache")
 	var tosend struct {
 		Expires string
 		Nodes   map[string][]byte

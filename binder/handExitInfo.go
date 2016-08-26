@@ -16,6 +16,7 @@ func (cmd *Command) handExitInfo(w http.ResponseWriter, r *http.Request) {
 		Expires string
 		Exits   map[string][]byte
 	}
+	w.Header().Add("Cache-Control", "max-age=120")
 	// Some sanity-checking to make sure we don't sign something stupid
 	hand, err := os.Open(cmd.exitConf)
 	if err != nil {

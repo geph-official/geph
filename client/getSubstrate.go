@@ -76,7 +76,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 	// step 2: swamp the exit nodes in parallel to get info
 	var entries []entryInfo
 	for ext, kee := range nds {
-		req, _ := http.NewRequest("GET",
+		req, _ := http.NewRequest("POST",
 			fmt.Sprintf("https://%v/exits/%v:8081/get-nodes", cFRONT, ext), nil)
 		req.Host = cHOST
 		var resp *http.Response
@@ -90,10 +90,8 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		}
 		buf := new(bytes.Buffer)
 		io.Copy(buf, resp.Body)
-		log.Println(string(buf.Bytes()) + "z")
 		err = json.NewDecoder(buf).Decode(&lol)
 		if err != nil {
-			fmt.Println("WOW")
 			resp.Body.Close()
 			continue
 		}
@@ -108,8 +106,10 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 	}
 	if len(entries) == 0 {
 		err = errors.New("nothing worked at all")
+		return
 	}
 	// step 3: randomly pick one
+	fmt.Println(entries)
 	log.Println("TODO: currently RANDOMLY picking an entry node due to lack of geolocation!")
 	xaxa := entries[rand.Int()%len(entries)]
 	fmt.Println(xaxa)

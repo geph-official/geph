@@ -7,6 +7,8 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
+
+	"github.com/ProjectNiwl/natrium"
 )
 
 func (cmd *Command) handUpdateNode(w http.ResponseWriter, r *http.Request) {
@@ -38,6 +40,8 @@ func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 	tosend.Expires = time.Now().Add(time.Hour).Format(time.RFC3339)
 	tosend.Nodes = cmd.edb.GetNodes(0)
 	bts, _ := json.Marshal(&tosend)
+	sig := cmd.identity.Sign(bts)
+	w.Header().Add("X-Geph-Signature", natrium.HexEncode(sig))
 	w.Write(bts)
 }
 

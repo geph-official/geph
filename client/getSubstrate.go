@@ -16,6 +16,12 @@ import (
 	"github.com/bunsim/niaucchi"
 )
 
+var binderPub natrium.EdDSAPublic
+
+func init() {
+	binderPub, _ = natrium.HexDecode("d25bcdc91961a6e9e6c74fbcd5eb977c18e7b1fe63a78ec62378b55aa5172654")
+}
+
 var myHTTP = &http.Client{
 	Transport: &http.Transport{
 		TLSHandshakeTimeout: time.Second * 10,
@@ -28,6 +34,7 @@ const cFRONT = "a0.awsstatic.com"
 const cHOST = "dtnins2n354c4.cloudfront.net"
 
 func (cmd *Command) getExitNodes() (nds map[string][]byte, err error) {
+	// request the data
 	req, _ := http.NewRequest("GET", fmt.Sprintf("https://%v/exit-info", cFRONT), nil)
 	req.Host = cHOST
 	resp, err := myHTTP.Do(req)
@@ -37,12 +44,25 @@ func (cmd *Command) getExitNodes() (nds map[string][]byte, err error) {
 	defer resp.Body.Close()
 	buf := new(bytes.Buffer)
 	io.Copy(buf, resp.Body)
-	log.Println("TODO: no authentication of binder done")
+	// verify the data
+	hexsig := resp.Header.Get("X-Geph-Signature")
+	sig, err := natrium.HexDecode(hexsig)
+	if err != nil {
+		return
+	}
+	if len(sig) != 64 || buf.Len() == 0 {
+		err = errors.New("lol so broken")
+		return
+	}
+	err = binderPub.Verify(buf.Bytes(), sig)
+	if err != nil {
+		return
+	}
+	// now everything must be fine
 	var exinf struct {
 		Expires string
 		Exits   map[string][]byte
 	}
-	fmt.Println(string(buf.Bytes()))
 	err = json.Unmarshal(buf.Bytes(), &exinf)
 	if err != nil {
 		log.Println("WARNING: bad json encountered in exit info:", err.Error())
@@ -90,6 +110,22 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		}
 		buf := new(bytes.Buffer)
 		io.Copy(buf, resp.Body)
+		// we have to verify at this point!
+		hexsig := resp.Header.Get("X-Geph-Signature")
+		var sig []byte
+		sig, err = natrium.HexDecode(hexsig)
+		if len(sig) != 64 || buf.Len() == 0 {
+			err = errors.New("lol so broken")
+			return
+		}
+		if err != nil {
+			return
+		}
+		err = natrium.EdDSAPublic(kee).Verify(buf.Bytes(), sig)
+		if err != nil {
+			return
+		}
+		// now the thing has to be legit
 		err = json.NewDecoder(buf).Decode(&lol)
 		if err != nil {
 			resp.Body.Close()

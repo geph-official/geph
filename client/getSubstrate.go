@@ -73,7 +73,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 	if err != nil {
 		return
 	}
-	// step 2: swamp the exit nodes in parallel to get info
+	// step 2: for each exit node, ping all the entry nodes
 	var entries []entryInfo
 	for ext, kee := range nds {
 		req, _ := http.NewRequest("POST",

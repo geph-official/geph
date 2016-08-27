@@ -102,7 +102,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		var resp *http.Response
 		resp, err = myHTTP.Do(req)
 		if err != nil {
-			return
+			continue
 		}
 		var lol struct {
 			Expires string
@@ -115,15 +115,14 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		var sig []byte
 		sig, err = natrium.HexDecode(hexsig)
 		if len(sig) != 64 || buf.Len() == 0 {
-			err = errors.New("lol so broken")
-			return
+			continue
 		}
 		if err != nil {
-			return
+			continue
 		}
 		err = natrium.EdDSAPublic(kee).Verify(buf.Bytes(), sig)
 		if err != nil {
-			return
+			continue
 		}
 		// now the thing has to be legit
 		err = json.NewDecoder(buf).Decode(&lol)

@@ -10,7 +10,6 @@ import (
 )
 
 func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest *string) {
-	log.Println("obfuscation listening on", lsnr.Addr(), "forwards to", dest)
 	for {
 		raw, err := lsnr.Accept()
 		if err != nil {

@@ -54,6 +54,7 @@ func (cmd *Command) Execute(_ context.Context,
 	cookie := make([]byte, 12)
 	natrium.RandBytes(cookie)
 	lsnr, _ := net.ListenTCP("tcp", nil)
+	go cmd.doForward(lsnr, cookie, &choice)
 	for {
 		// our first step is to guess our own IP
 	lRETRY:
@@ -125,7 +126,6 @@ func (cmd *Command) Execute(_ context.Context,
 				}
 			}
 			log.Println("our choice of exit is", choice, "based purely on throughput")
-			go cmd.doForward(lsnr, cookie, &choice)
 		}
 		// we then do our upload
 		var tosend struct {

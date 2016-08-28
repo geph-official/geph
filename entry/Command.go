@@ -145,6 +145,6 @@ func (cmd *Command) Execute(_ context.Context,
 			log.Println("uploaded entry info to", choice)
 			resp.Body.Close()
 		}
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Minute * 2)
 	}
 }

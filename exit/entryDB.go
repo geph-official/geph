@@ -26,7 +26,7 @@ func newEntryDB() *entryDB {
 			var toDelete []string
 			toret.lok.RLock()
 			for addr, expire := range toret.expireTab {
-				if expire.After(time.Now()) {
+				if expire.Before(time.Now()) {
 					toDelete = append(toDelete, addr)
 				}
 			}

@@ -153,7 +153,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		go func() {
 			cand, merr := niaucchi.DialSubstrate(xaxa.Cookie,
 				kiss.NewDirectVerifier(xaxa.ExitKey),
-				xaxa.Addr)
+				xaxa.Addr, 16)
 			if merr != nil {
 				return
 			}

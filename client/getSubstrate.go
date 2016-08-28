@@ -94,7 +94,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		return
 	}
 	// step 2: for each exit node, ping all the entry nodes
-	var entries []entryInfo
+	entries := make(map[string][]entryInfo)
 	for ext, kee := range nds {
 		req, _ := http.NewRequest("POST",
 			fmt.Sprintf("https://%v/exits/%v:8081/get-nodes", cFRONT, ext), nil)
@@ -132,7 +132,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		}
 		resp.Body.Close()
 		for addr, cook := range lol.Nodes {
-			entries = append(entries, entryInfo{
+			entries[ext] = append(entries[ext], entryInfo{
 				Addr:    addr,
 				Cookie:  cook,
 				ExitKey: natrium.EdDSAPublic(kee),
@@ -144,10 +144,33 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		return
 	}
 	// step 3: randomly pick one
-	fmt.Println(entries)
-	log.Println("TODO: currently RANDOMLY picking an entry node due to lack of geolocation!")
-	xaxa := entries[rand.Int()%len(entries)]
-	fmt.Println(xaxa)
-	ss, err = niaucchi.DialSubstrate(xaxa.Cookie, kiss.NewDirectVerifier(xaxa.ExitKey), xaxa.Addr)
-	return
+	log.Println("race off between one of each region")
+	retline := make(chan *niaucchi.Substrate)
+	dedline := make(chan bool)
+	for exit, entries := range entries {
+		xaxa := entries[rand.Int()%len(entries)]
+		log.Println(xaxa.Addr, "selected to represent", exit)
+		go func() {
+			cand, merr := niaucchi.DialSubstrate(xaxa.Cookie,
+				kiss.NewDirectVerifier(xaxa.ExitKey),
+				xaxa.Addr)
+			if merr != nil {
+				return
+			}
+			select {
+			case retline <- cand:
+			case <-dedline:
+				log.Println(xaxa.Addr, "failed race")
+				cand.Tomb().Kill(io.ErrClosedPipe)
+			}
+		}()
+	}
+	select {
+	case ss = <-retline:
+		close(dedline)
+		return
+	case <-time.After(time.Second * 10):
+		err = errors.New("timeout")
+		return
+	}
 }

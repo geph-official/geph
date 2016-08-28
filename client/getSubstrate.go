@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"time"
 
@@ -144,26 +143,28 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		return
 	}
 	// step 3: randomly pick one
-	log.Println("race off between one of each region")
 	retline := make(chan *niaucchi.Substrate)
 	dedline := make(chan bool)
 	for exit, entries := range entries {
-		xaxa := entries[rand.Int()%len(entries)]
-		log.Println(xaxa.Addr, "selected to represent", exit)
-		go func() {
-			cand, merr := niaucchi.DialSubstrate(xaxa.Cookie,
-				kiss.NewDirectVerifier(xaxa.ExitKey),
-				xaxa.Addr, 16)
-			if merr != nil {
-				return
-			}
-			select {
-			case retline <- cand:
-			case <-dedline:
-				log.Println(xaxa.Addr, "failed race")
-				cand.Tomb().Kill(io.ErrClosedPipe)
-			}
-		}()
+		for _, xaxa := range entries {
+			xaxa := xaxa
+			log.Println(xaxa.Addr, "from", exit)
+			go func() {
+				cand, merr := niaucchi.DialSubstrate(xaxa.Cookie,
+					kiss.NewDirectVerifier(xaxa.ExitKey),
+					xaxa.Addr, 4)
+				if merr != nil {
+					log.Println(xaxa.Addr, "failed right away")
+					return
+				}
+				select {
+				case retline <- cand:
+				case <-dedline:
+					log.Println(xaxa.Addr, "failed race")
+					cand.Tomb().Kill(io.ErrClosedPipe)
+				}
+			}()
+		}
 	}
 	select {
 	case ss = <-retline:

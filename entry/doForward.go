@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"time"
 
 	"github.com/bunsim/kiss"
 )
@@ -22,7 +23,7 @@ func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest *string) {
 				return
 			}
 			defer clnt.Close()
-			remote, err := net.Dial("tcp", fmt.Sprintf("%v:2378", *dest))
+			remote, err := net.DialTimeout("tcp", fmt.Sprintf("%v:2378", *dest), time.Second*2)
 			if err != nil {
 				log.Println("WARNING: failed to forward to", *dest, ":", err.Error())
 				return

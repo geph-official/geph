@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"time"
 
 	"github.com/bunsim/niaucchi"
 )
@@ -59,7 +60,7 @@ func (cmd *Command) doProxy() {
 			}
 			// go ahead and connect
 			log.Println("proxying", addr)
-			rmt, err := net.DialTCP("tcp", nil, addr)
+			rmt, err := net.DialTimeout("tcp", addr.String(), time.Second*5)
 			if err != nil {
 				log.Println("failed to connect to", addr)
 				return

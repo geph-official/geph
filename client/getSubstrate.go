@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,6 +25,7 @@ func init() {
 var myHTTP = &http.Client{
 	Transport: &http.Transport{
 		TLSHandshakeTimeout: time.Second * 10,
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
 		//DisableKeepAlives:   true,
 	},
 	Timeout: time.Second * 10,

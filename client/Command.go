@@ -5,13 +5,16 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/ProjectNiwl/tinysocks"
+	"github.com/bunsim/goproxy"
 	"github.com/bunsim/niaucchi"
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
+	"golang.org/x/net/proxy"
 )
 
 // Command is the client subcommand.
@@ -39,7 +42,7 @@ func (cmd *Command) Execute(_ context.Context,
 	var sl sync.Mutex
 	// one thread does all the SOCKS stuff
 	go func() {
-		lsnr, err := net.Listen("tcp", "127.0.0.1:9999")
+		lsnr, err := net.Listen("tcp", "127.0.0.1:8781")
 		if err != nil {
 			panic(err.Error())
 		}
@@ -79,6 +82,22 @@ func (cmd *Command) Execute(_ context.Context,
 				io.Copy(conn, clnt)
 			}()
 		}
+	}()
+	// another one does HTTP
+	srv := goproxy.NewProxyHttpServer()
+	srv.Tr = &http.Transport{
+		Dial: func(n, d string) (net.Conn, error) {
+			dler, err := proxy.SOCKS5("tcp", "localhost:8781", nil, proxy.Direct)
+			if err != nil {
+				panic(err.Error())
+			}
+			return dler.Dial(n, d)
+		},
+		MaxIdleConns: 0,
+	}
+	go func() {
+		err := http.ListenAndServe("127.0.0.1:8780", srv)
+		panic(err.Error)
 	}()
 	// the other constantly revives the stuff
 	for {

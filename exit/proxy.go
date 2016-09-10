@@ -2,6 +2,7 @@ package exit
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -39,12 +40,13 @@ func (cmd *Command) doProxy() {
 			// per-substrate rate limit of 96 KiB/s
 			limit := rate.NewLimiter(rate.Limit(96*1024), 512*1024)
 			ctx := context.Background()
+			defer ss.Tomb().Kill(io.ErrClosedPipe)
 			for {
-				defer ss.Tomb().Kill(io.ErrClosedPipe)
 				clnt, err := ss.AcceptConn()
 				if err != nil {
 					return
 				}
+				fmt.Println("GOT")
 				go func() {
 					defer clnt.Close()
 					// pascal string of the address
@@ -53,6 +55,7 @@ func (cmd *Command) doProxy() {
 					if err != nil {
 						return
 					}
+					fmt.Println("ONE")
 					addrbts := make([]byte, lb[0])
 					_, err = io.ReadFull(clnt, addrbts)
 					if err != nil {

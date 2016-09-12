@@ -161,6 +161,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 				}
 				select {
 				case retline <- cand:
+					log.Println(xaxa.Addr, "WINNER")
 				case <-dedline:
 					log.Println(xaxa.Addr, "failed race")
 					cand.Tomb().Kill(io.ErrClosedPipe)

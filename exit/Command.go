@@ -13,7 +13,8 @@ import (
 
 // Command is the exit subcommand.
 type Command struct {
-	idSeed string
+	idSeed  string
+	bwLimit int
 
 	identity natrium.EdDSAPrivate
 	edb      *entryDB
@@ -31,6 +32,7 @@ func (*Command) Usage() string { return "" }
 // SetFlags sets the flag on the binder subcommand.
 func (cmd *Command) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.idSeed, "idSeed", "", "seed to use to generate private key")
+	f.IntVar(&cmd.bwLimit, "bwLimit", 100, "bandwidth limit for free sessions (Kbps)")
 }
 
 // Execute executes the exit subcommand.

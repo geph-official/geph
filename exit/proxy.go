@@ -37,8 +37,8 @@ func (cmd *Command) doProxy() {
 			panic(err.Error())
 		}
 		go func() {
-			// per-substrate rate limit of 96 KiB/s
-			limit := rate.NewLimiter(rate.Limit(96*1024), 512*1024)
+			// per-substrate rate limit
+			limit := rate.NewLimiter(rate.Limit(cmd.bwLimit*1024), 512*1024)
 			ctx := context.Background()
 			defer ss.Tomb().Kill(io.ErrClosedPipe)
 			for {

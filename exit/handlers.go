@@ -26,7 +26,7 @@ func (cmd *Command) handUpdateNode(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("handUpdateNode: node claiming to be", req.Addr, "doesn't check out")
 	} else {
-		log.Println("handUpdateNode: node updated:", req.Addr, "/", req.Cookie)
+		log.Println("handUpdateNode: node updated:", req.Addr, "/", natrium.HexEncode(req.Cookie))
 	}
 	return
 }

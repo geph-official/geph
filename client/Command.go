@@ -93,7 +93,7 @@ func (cmd *Command) Execute(_ context.Context,
 			}
 			return dler.Dial(n, d)
 		},
-		MaxIdleConns: 0,
+		DisableKeepAlives: true,
 	}
 	go func() {
 		err := http.ListenAndServe("127.0.0.1:8780", srv)

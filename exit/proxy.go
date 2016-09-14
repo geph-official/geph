@@ -2,7 +2,6 @@ package exit
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -46,7 +45,6 @@ func (cmd *Command) doProxy() {
 				if err != nil {
 					return
 				}
-				fmt.Println("GOT")
 				go func() {
 					defer clnt.Close()
 					// pascal string of the address
@@ -55,13 +53,11 @@ func (cmd *Command) doProxy() {
 					if err != nil {
 						return
 					}
-					fmt.Println("ONE")
 					addrbts := make([]byte, lb[0])
 					_, err = io.ReadFull(clnt, addrbts)
 					if err != nil {
 						return
 					}
-					log.Println("requested to proxy", string(addrbts))
 					// resolve and connect
 					addr, err := net.ResolveTCPAddr("tcp", string(addrbts))
 					if err != nil {
@@ -70,15 +66,12 @@ func (cmd *Command) doProxy() {
 					// block connections to things in the CIDR blacklist
 					for _, n := range cidrBlacklist {
 						if n.Contains(addr.IP) {
-							log.Println("refusing to connect to local address", addr)
 							return
 						}
 					}
 					// go ahead and connect
-					log.Println("proxying", addr)
 					rmt, err := net.DialTimeout("tcp", addr.String(), time.Second*5)
 					if err != nil {
-						log.Println("failed to connect to", addr)
 						return
 					}
 					// forward traffic

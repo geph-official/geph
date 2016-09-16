@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ProjectNiwl/natrium"
+	"github.com/bunsim/natrium"
 )
 
 type entryDB struct {

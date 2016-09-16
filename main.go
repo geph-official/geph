@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/ProjectNiwl/natrium"
+	"github.com/bunsim/natrium"
 	"github.com/bunsim/geph/binder"
 	"github.com/bunsim/geph/client"
 	"github.com/bunsim/geph/entry"

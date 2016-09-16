@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ProjectNiwl/natrium"
+	"github.com/bunsim/natrium"
 	"github.com/bunsim/kiss"
 	"github.com/bunsim/niaucchi"
 )

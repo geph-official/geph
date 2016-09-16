@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ProjectNiwl/natrium"
+	"github.com/bunsim/natrium"
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
 )

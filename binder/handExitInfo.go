@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ProjectNiwl/natrium"
+	"github.com/bunsim/natrium"
 )
 
 func (cmd *Command) handExitInfo(w http.ResponseWriter, r *http.Request) {

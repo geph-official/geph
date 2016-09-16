@@ -66,7 +66,6 @@ func (cmd *Command) doProxy() {
 					// block connections to things in the CIDR blacklist
 					for _, n := range cidrBlacklist {
 						if n.Contains(addr.IP) {
-							log.Println("refusing to connect to local address", addr)
 							return
 						}
 					}

@@ -18,7 +18,7 @@ func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest *string) {
 		}
 		go func() {
 			defer raw.Close()
-			clnt, err := cluttershirt.Client(cookie, raw)
+			clnt, err := cluttershirt.Server(cookie, raw)
 			if err != nil {
 				return
 			}

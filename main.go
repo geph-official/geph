@@ -7,12 +7,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/bunsim/natrium"
 	"github.com/bunsim/geph/binder"
 	"github.com/bunsim/geph/client"
 	"github.com/bunsim/geph/entry"
 	"github.com/bunsim/geph/exit"
 	"github.com/google/subcommands"
+	"gopkg.in/bunsim/natrium.v1"
 )
 
 func main() {

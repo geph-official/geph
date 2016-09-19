@@ -6,6 +6,8 @@ import (
 	"net"
 	"time"
 
+	//"github.com/bunsim/miniss"
+
 	"gopkg.in/bunsim/miniss.v1"
 
 	"gopkg.in/bunsim/cluttershirt.v1"
@@ -32,16 +34,18 @@ func DialSubstrate(ocookie []byte, theirPK natrium.ECDHPublic, addr string, mult
 				if err != nil {
 					return
 				}
+				log.Println("obfs dunn")
 			}
-			log.Println("obfs dunn")
 			crypt, err := miniss.Handshake(z, natrium.ECDHGenerateKey())
 			if err != nil {
+				log.Println("ded here??")
 				return
 			}
 			if natrium.CTCompare(crypt.RemotePK(), theirPK) != 0 {
 				err = errors.New("authentication failure")
 				return
 			}
+			log.Println("miniss dunn")
 			conns[i] = crypt
 			_, err = conns[i].Write([]byte{byte(mult)})
 			_, err = conns[i].Write(connid)

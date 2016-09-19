@@ -2,9 +2,12 @@ package niaucchi
 
 import (
 	"io"
+	"log"
 	"net"
 	"sync"
 	"time"
+
+	//"github.com/bunsim/miniss"
 
 	"gopkg.in/bunsim/cluttershirt.v1"
 	"gopkg.in/bunsim/miniss.v1"
@@ -73,6 +76,7 @@ func Listen(ocookie []byte, identity natrium.ECDHPrivate, addr string) (lsnr *Li
 					raw.Close()
 					return
 				}
+				log.Println("miniss listen done")
 				// read the multiplier
 				mlt := make([]byte, 1)
 				io.ReadFull(pipe, mlt)

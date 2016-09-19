@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/bunsim/natrium"
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
+	"gopkg.in/bunsim/natrium.v1"
 )
 
 // Command is the exit subcommand.

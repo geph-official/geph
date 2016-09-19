@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/ProjectNiwl/tinysocks"
+	"github.com/bunsim/geph/niaucchi"
 	"github.com/bunsim/goproxy"
-	"github.com/bunsim/niaucchi"
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
 	"golang.org/x/net/proxy"

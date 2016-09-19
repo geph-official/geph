@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bunsim/natrium"
+	"gopkg.in/bunsim/natrium.v1"
 )
 
 func (cmd *Command) handUpdateNode(w http.ResponseWriter, r *http.Request) {

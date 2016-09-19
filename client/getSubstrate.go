@@ -11,9 +11,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bunsim/natrium"
-	"github.com/bunsim/kiss"
-	"github.com/bunsim/niaucchi"
+	"github.com/bunsim/geph/niaucchi"
+	"gopkg.in/bunsim/natrium.v1"
 )
 
 var binderPub natrium.EdDSAPublic
@@ -153,7 +152,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 			log.Println(xaxa.Addr, "from", exit)
 			go func() {
 				cand, merr := niaucchi.DialSubstrate(xaxa.Cookie,
-					kiss.NewDirectVerifier(xaxa.ExitKey),
+					xaxa.ExitKey.ToECDH(),
 					xaxa.Addr, 8)
 				if merr != nil {
 					log.Println(xaxa.Addr, "failed right away")

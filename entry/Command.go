@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bunsim/natrium"
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
+	"gopkg.in/bunsim/natrium.v1"
 )
 
 var myHTTP = &http.Client{

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bunsim/natrium"
+	"gopkg.in/bunsim/natrium.v1"
 )
 
 type entryDB struct {

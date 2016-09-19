@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/bunsim/kiss"
+	"gopkg.in/bunsim/cluttershirt.v1"
 )
 
 func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest *string) {
@@ -18,7 +18,7 @@ func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest *string) {
 		}
 		go func() {
 			defer raw.Close()
-			clnt, err := kiss.LLObfsServerHandshake(cookie, raw)
+			clnt, err := cluttershirt.Client(cookie, raw)
 			if err != nil {
 				return
 			}

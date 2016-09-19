@@ -9,11 +9,11 @@ import (
 
 	"golang.org/x/time/rate"
 
-	"github.com/bunsim/niaucchi"
+	"github.com/bunsim/geph/niaucchi"
 )
 
 func (cmd *Command) doProxy() {
-	lsnr, err := niaucchi.Listen(nil, cmd.identity, ":2378")
+	lsnr, err := niaucchi.Listen(nil, cmd.identity.ToECDH(), ":2378")
 	if err != nil {
 		panic(err.Error())
 	}

@@ -20,9 +20,10 @@ var ErrProtocolFail = errors.New("protocol failure")
 
 // Substrate represents a pool of connections over which carried connections are multiplexed.
 type Substrate struct {
-	upch chan segment
-	opch chan segment
-	mtmb *tomb.Tomb
+	upch      chan segment
+	upchSides []chan segment
+	opch      chan segment
+	mtmb      *tomb.Tomb
 
 	cbtab map[uint16]func(segment)
 	cblok sync.Mutex
@@ -109,7 +110,7 @@ func (ss *Substrate) OpenConn() (cn net.Conn, err error) {
 		ConnID: connid,
 	}
 	select {
-	case ss.upch <- tosend:
+	case ss.upchSides[int(connid)%len(ss.upchSides)] <- tosend:
 	case <-ss.mtmb.Dying():
 		err = ss.mtmb.Err()
 		return
@@ -142,10 +143,11 @@ func (ss *Substrate) OpenConn() (cn net.Conn, err error) {
 // NewSubstrate creates a Substrate from the given connections.
 func NewSubstrate(transport []net.Conn) *Substrate {
 	toret := &Substrate{
-		upch:  make(chan segment),
-		opch:  make(chan segment, 256),
-		mtmb:  new(tomb.Tomb),
-		cbtab: make(map[uint16]func(segment)),
+		upch:      make(chan segment),
+		upchSides: make([]chan segment, len(transport)),
+		opch:      make(chan segment, 256),
+		mtmb:      new(tomb.Tomb),
+		cbtab:     make(map[uint16]func(segment)),
 	}
 
 	// the watchdog
@@ -163,8 +165,10 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 	})
 	tmb := toret.mtmb
 	// we spin up the worker threads
-	for _, cn := range transport {
+	for idx, cn := range transport {
 		cn := cn
+		idx := idx
+		toret.upchSides[idx] = make(chan segment)
 		tmb.Go(func() error {
 			defer cn.Close()
 			for i := 0; ; i++ {
@@ -172,6 +176,8 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 				case <-tmb.Dying():
 					return nil
 				case towr := <-toret.upch:
+					struc.Pack(cn, &towr)
+				case towr := <-toret.upchSides[idx]:
 					struc.Pack(cn, &towr)
 				}
 			}

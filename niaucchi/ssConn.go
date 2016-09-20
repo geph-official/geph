@@ -40,11 +40,23 @@ func (sc *ssConn) Write(p []byte) (n int, err error) {
 	}
 	sc.sendctr++
 	// send off the tosend
-	select {
-	case sc.daddy.upch <- tosend:
-	case <-sc.tmb.Dying():
-		err = io.ErrClosedPipe
-		return
+	if sc.sendctr < 20 {
+		// for the first 20 segments, fix to a particular channel
+		//log.Printf("niaucchi: fixing %v->%v for packet %v", sc.connid,
+		//	int(sc.connid)%len(sc.daddy.upchSides), sc.sendctr)
+		select {
+		case sc.daddy.upchSides[int(sc.connid)%len(sc.daddy.upchSides)] <- tosend:
+		case <-sc.tmb.Dying():
+			err = io.ErrClosedPipe
+			return
+		}
+	} else {
+		select {
+		case sc.daddy.upch <- tosend:
+		case <-sc.tmb.Dying():
+			err = io.ErrClosedPipe
+			return
+		}
 	}
 	// wait for the ack
 	select {
@@ -160,7 +172,7 @@ func newSsConn(tmb *tomb.Tomb, daddy *Substrate, incoming chan segment, connid u
 		connid: connid,
 		tmb:    tmb,
 
-		sendbar: make(chan struct{}, 64),
+		sendbar: make(chan struct{}, 16),
 	}
 
 	go func() {

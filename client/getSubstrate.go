@@ -153,7 +153,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 			go func() {
 				cand, merr := niaucchi.DialSubstrate(xaxa.Cookie,
 					xaxa.ExitKey.ToECDH(),
-					xaxa.Addr, 4)
+					xaxa.Addr, 8)
 				if merr != nil {
 					log.Println(xaxa.Addr, "failed right away:", merr)
 					return

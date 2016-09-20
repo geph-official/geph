@@ -28,8 +28,7 @@ type ssConn struct {
 
 // Write writes from a buffer.
 func (sc *ssConn) Write(p []byte) (n int, err error) {
-	// MSS is 8KiB to prevent excessive HOL blocking
-	if len(p) > 8*1024 {
+	if len(p) > 32*1024 {
 		var fn int
 		fn, err = sc.realWrite(p[:1024])
 		if err != nil {

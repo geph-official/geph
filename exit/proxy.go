@@ -79,7 +79,7 @@ func (cmd *Command) doProxy() {
 					go func() {
 						defer rmt.Close()
 						defer clnt.Close()
-						buf := make([]byte, 16384)
+						buf := make([]byte, 32768)
 						for {
 							n, err := rmt.Read(buf)
 							if err != nil {
@@ -92,7 +92,7 @@ func (cmd *Command) doProxy() {
 							}
 						}
 					}()
-					buf := make([]byte, 16384)
+					buf := make([]byte, 32768)
 					for {
 						n, err := clnt.Read(buf)
 						if err != nil {

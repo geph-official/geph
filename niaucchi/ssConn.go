@@ -126,7 +126,6 @@ func (sc *ssConn) Read(p []byte) (n int, err error) {
 		err = io.ErrClosedPipe
 		return
 	case seg := <-sc.sorted:
-		//log.Println(seg)
 		if seg.Flag == flData {
 			// get ack back first
 			select {

@@ -14,6 +14,6 @@ type segment struct {
 	Flag   uint8
 	ConnID uint16
 	Serial uint64
-	BodLen int `struc:"uint32,sizeof=Body"`
+	BodLen int `struc:"uint16,sizeof=Body"`
 	Body   []byte
 }

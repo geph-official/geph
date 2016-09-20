@@ -28,6 +28,27 @@ type ssConn struct {
 
 // Write writes from a buffer.
 func (sc *ssConn) Write(p []byte) (n int, err error) {
+	// MSS is 8KiB to prevent excessive HOL blocking
+	if len(p) > 8*1024 {
+		var fn int
+		fn, err = sc.realWrite(p[:1024])
+		if err != nil {
+			return
+		}
+		var rn int
+		rn, err = sc.Write(p[1024:])
+		if err != nil {
+			return
+		}
+		n = fn + rn
+		return
+	}
+	// for smaller writes pass through
+	return sc.realWrite(p)
+}
+
+// realWrite omits splitting segments
+func (sc *ssConn) realWrite(p []byte) (n int, err error) {
 	sc.sendlok.Lock()
 	defer sc.sendlok.Unlock()
 	pcp := make([]byte, len(p))
@@ -40,8 +61,8 @@ func (sc *ssConn) Write(p []byte) (n int, err error) {
 	}
 	sc.sendctr++
 	// send off the tosend
-	if sc.sendctr < 20 {
-		// for the first 20 segments, fix to a particular channel
+	if sc.sendctr < 40 {
+		// for the first 40 segments, fix to a particular channel
 		//log.Printf("niaucchi: fixing %v->%v for packet %v", sc.connid,
 		//	int(sc.connid)%len(sc.daddy.upchSides), sc.sendctr)
 		select {
@@ -172,7 +193,7 @@ func newSsConn(tmb *tomb.Tomb, daddy *Substrate, incoming chan segment, connid u
 		connid: connid,
 		tmb:    tmb,
 
-		sendbar: make(chan struct{}, 16),
+		sendbar: make(chan struct{}, 64),
 	}
 
 	go func() {

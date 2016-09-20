@@ -172,13 +172,19 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 		tmb.Go(func() error {
 			defer cn.Close()
 			for i := 0; ; i++ {
+				// prioritize the specifically addressed segments
 				select {
-				case <-tmb.Dying():
-					return nil
-				case towr := <-toret.upch:
-					struc.Pack(cn, &towr)
 				case towr := <-toret.upchSides[idx]:
 					struc.Pack(cn, &towr)
+				default:
+					select {
+					case <-tmb.Dying():
+						return nil
+					case towr := <-toret.upch:
+						struc.Pack(cn, &towr)
+					case towr := <-toret.upchSides[idx]:
+						struc.Pack(cn, &towr)
+					}
 				}
 			}
 		})

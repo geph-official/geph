@@ -2,10 +2,12 @@ package client
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -40,6 +42,8 @@ func (cmd *Command) Execute(_ context.Context,
 	args ...interface{}) subcommands.ExitStatus {
 	var ss *niaucchi.Substrate
 	var sl sync.Mutex
+	// one thread does DNS
+	go cmd.doDNS()
 	// one thread does all the SOCKS stuff
 	go func() {
 		lsnr, err := net.Listen("tcp", "127.0.0.1:8781")
@@ -63,6 +67,15 @@ func (cmd *Command) Execute(_ context.Context,
 				dest, err := tinysocks.ReadRequest(clnt)
 				if err != nil {
 					return
+				}
+				host, port := strings.Split(dest, ":")[0], strings.Split(dest, ":")[1]
+				if net.ParseIP(host) == nil {
+					var ip string
+					ip, err = cmd.resolveName(host)
+					if err != nil {
+						return
+					}
+					dest = fmt.Sprintf("%v:%v", ip, port)
 				}
 				conn, err := myss.OpenConn()
 				if err != nil {

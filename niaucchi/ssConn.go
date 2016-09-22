@@ -60,23 +60,11 @@ func (sc *ssConn) realWrite(p []byte) (n int, err error) {
 	}
 	sc.sendctr++
 	// send off the tosend
-	if sc.sendctr < 40 {
-		// for the first 40 segments, fix to a particular channel
-		//log.Printf("niaucchi: fixing %v->%v for packet %v", sc.connid,
-		//	int(sc.connid)%len(sc.daddy.upchSides), sc.sendctr)
-		select {
-		case sc.daddy.upchSides[int(sc.connid)%len(sc.daddy.upchSides)] <- tosend:
-		case <-sc.tmb.Dying():
-			err = io.ErrClosedPipe
-			return
-		}
-	} else {
-		select {
-		case sc.daddy.upch <- tosend:
-		case <-sc.tmb.Dying():
-			err = io.ErrClosedPipe
-			return
-		}
+	select {
+	case sc.daddy.upch <- tosend:
+	case <-sc.tmb.Dying():
+		err = io.ErrClosedPipe
+		return
 	}
 	// wait for the ack
 	select {

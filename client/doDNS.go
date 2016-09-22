@@ -20,6 +20,7 @@ type dnsCacheEntry struct {
 func (cmd *Command) resolveName(name string) (ip string, err error) {
 	c := &dns.Client{
 		UDPSize: 65000,
+		Timeout: time.Second * 5,
 	}
 	m := &dns.Msg{}
 	m.SetQuestion(name+".", dns.TypeA)
@@ -41,7 +42,8 @@ func (cmd *Command) resolveName(name string) (ip string, err error) {
 func (cmd *Command) doDNSCache() {
 	// client that connects to our own TCP
 	clnt := &dns.Client{
-		Net: "tcp",
+		Net:     "tcp",
+		Timeout: time.Second * 5,
 	}
 
 	tbl := make(map[string]dnsCacheEntry)
@@ -78,6 +80,9 @@ func (cmd *Command) doDNSCache() {
 				if rsp.response != nil && rsp.deadline.After(time.Now()) {
 					msg := rsp.response.(*dns.Msg)
 					msg.Id = r.Id
+					for _, v := range msg.Answer {
+						v.Header().Ttl = uint32(rsp.deadline.Sub(time.Now()).Seconds())
+					}
 					w.WriteMsg(msg)
 					lok.Unlock()
 					return
@@ -90,6 +95,13 @@ func (cmd *Command) doDNSCache() {
 				log.Println("tunneled DNS resolution of", r.Question[0].Name, "failed:", err.Error())
 				return
 			}
+			// truncate it
+			for _, a := range in.Answer {
+				a.Header().Ttl = 3600
+			}
+			in.Extra = nil
+			in.Ns = nil
+
 			w.WriteMsg(in)
 			// now put into cache
 			if q.Qtype == dns.TypeA || q.Qtype == dns.TypeCNAME {

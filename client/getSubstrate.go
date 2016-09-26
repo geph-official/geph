@@ -143,7 +143,8 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		err = errors.New("nothing worked at all")
 		return
 	}
-	// step 3: randomly pick one
+
+	// step 3: massive race
 	retline := make(chan *niaucchi.Substrate)
 	dedline := make(chan bool)
 	for exit, entries := range entries {
@@ -168,11 +169,13 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 			}()
 		}
 	}
+
 	select {
 	case ss = <-retline:
 		close(dedline)
 		return
 	case <-time.After(time.Second * 10):
+		close(dedline)
 		err = errors.New("timeout")
 		return
 	}

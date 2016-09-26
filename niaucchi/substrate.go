@@ -168,7 +168,6 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 		tmb.Go(func() error {
 			defer cn.Close()
 			for i := 0; ; i++ {
-				// prioritize the specifically addressed segments
 				select {
 				case <-tmb.Dying():
 					return nil

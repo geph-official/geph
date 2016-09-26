@@ -138,7 +138,7 @@ func (cmd *Command) doDNS() {
 			}
 			go func() {
 				defer clnt.Close()
-				rmt, err := dler.Dial("tcp", "8.26.56.26:53")
+				rmt, err := dler.Dial("tcp", "8.8.8.8:53")
 				if err != nil {
 					log.Println("failed to tunnel to DNS server:", err.Error())
 					return

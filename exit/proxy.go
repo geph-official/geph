@@ -2,14 +2,18 @@ package exit
 
 import (
 	"context"
+	"encoding/base32"
 	"io"
 	"log"
 	"net"
+	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
 
 	"github.com/bunsim/geph/niaucchi"
+	"gopkg.in/bunsim/natrium.v1"
 )
 
 func (cmd *Command) doProxy() {
@@ -36,10 +40,40 @@ func (cmd *Command) doProxy() {
 			panic(err.Error())
 		}
 		go func() {
+			defer ss.Tomb().Kill(io.ErrClosedPipe)
+			// get their pk first
+			pub := ss.RemotePK()
+			uid := strings.ToLower(
+				base32.StdEncoding.EncodeToString(
+					natrium.SecureHash(pub, nil)[:10]))
 			// per-substrate rate limit
 			limit := rate.NewLimiter(rate.Limit(cmd.bwLimit*1024), 512*1024)
 			ctx := context.Background()
-			defer ss.Tomb().Kill(io.ErrClosedPipe)
+			// check balance first
+			bal, err := cmd.decAccBalance(uid, 0)
+			if err != nil {
+				log.Println("error authenticating user", uid, ":", err)
+				return
+			}
+			log.Println(uid, "connected with", bal, "MiB left")
+			// little balance
+			lbal := 0
+			var lblk sync.Mutex
+			// consume bytes, returns true if succeeds, otherwise returns false and kills everything
+			consume := func(dec int) bool {
+				lblk.Lock()
+				defer lblk.Unlock()
+				lbal -= dec
+				if lbal <= 0 {
+					bal, err := cmd.decAccBalance(uid, 1)
+					if err != nil || bal == 0 {
+						ss.Tomb().Kill(io.ErrClosedPipe)
+						return false
+					}
+					lbal += 1024 * 1024
+				}
+				return true
+			}
 			for {
 				clnt, err := ss.AcceptConn()
 				if err != nil {
@@ -85,6 +119,9 @@ func (cmd *Command) doProxy() {
 							if err != nil {
 								return
 							}
+							if !consume(n) {
+								return
+							}
 							limit.WaitN(ctx, n)
 							_, err = clnt.Write(buf[:n])
 							if err != nil {
@@ -96,6 +133,9 @@ func (cmd *Command) doProxy() {
 					for {
 						n, err := clnt.Read(buf)
 						if err != nil {
+							return
+						}
+						if !consume(n) {
 							return
 						}
 						limit.WaitN(ctx, n)

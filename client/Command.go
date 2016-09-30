@@ -1,6 +1,7 @@
 package client
 
 import (
+	"encoding/base32"
 	"flag"
 	"fmt"
 	"io"
@@ -17,10 +18,15 @@ import (
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
 	"golang.org/x/net/proxy"
+	"gopkg.in/bunsim/natrium.v1"
 )
 
 // Command is the client subcommand.
 type Command struct {
+	uname string
+	pwd   string
+
+	identity natrium.ECDHPrivate
 }
 
 // Name returns the name "client".
@@ -34,12 +40,21 @@ func (*Command) Usage() string { return "" }
 
 // SetFlags sets the flag on the binder subcommand.
 func (cmd *Command) SetFlags(f *flag.FlagSet) {
+	f.StringVar(&cmd.uname, "uname", "test", "username")
+	f.StringVar(&cmd.pwd, "pwd", "removekebab", "password")
 }
 
 // Execute executes a client subcommand.
 func (cmd *Command) Execute(_ context.Context,
 	f *flag.FlagSet,
 	args ...interface{}) subcommands.ExitStatus {
+	// before anything else, generate identity
+	prek := natrium.SecureHash([]byte(cmd.pwd), []byte(cmd.uname))
+	cmd.identity = natrium.EdDSADeriveKey(
+		natrium.StretchKey(prek, make([]byte, natrium.PasswordSaltLen), 8, 64*1024*1024)).ToECDH()
+	log.Println("** Identity derived:", strings.ToLower(
+		base32.StdEncoding.EncodeToString(
+			natrium.SecureHash(cmd.identity.PublicKey(), nil)[:10])), "**")
 	var ss *niaucchi.Substrate
 	var sl sync.Mutex
 	// one thread does DNS

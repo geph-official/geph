@@ -41,7 +41,8 @@ func TestLol(t *testing.T) {
 	if err != nil {
 		panic(err.Error())
 	}
-	lel, err := DialSubstrate(nil, identity.PublicKey(), "127.0.0.1:13371", FACTOR)
+	lel, err := DialSubstrate(nil, natrium.ECDHGenerateKey(),
+		identity.PublicKey(), "127.0.0.1:13371", FACTOR)
 	if err != nil {
 		panic(err.Error())
 	}

@@ -16,7 +16,8 @@ import (
 )
 
 // DialSubstrate dials to the given destination and returns a substrate. A nil obfuscation cookie means the unobfuscated protocol would be used.
-func DialSubstrate(ocookie []byte, theirPK natrium.ECDHPublic, addr string, mult int) (ss *Substrate, err error) {
+func DialSubstrate(ocookie []byte, ourSK natrium.ECDHPrivate,
+	theirPK natrium.ECDHPublic, addr string, mult int) (ss *Substrate, err error) {
 	conns := make([]net.Conn, mult)
 	connid := make([]byte, 32)
 	natrium.RandBytes(connid)
@@ -36,7 +37,7 @@ func DialSubstrate(ocookie []byte, theirPK natrium.ECDHPublic, addr string, mult
 				}
 				log.Println("obfs dunn")
 			}
-			crypt, err := miniss.Handshake(z, natrium.ECDHGenerateKey())
+			crypt, err := miniss.Handshake(z, ourSK)
 			if err != nil {
 				log.Println("ded here??")
 				return

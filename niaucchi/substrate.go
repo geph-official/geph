@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lunixbochs/struc"
+	"gopkg.in/bunsim/miniss.v1"
 
 	"gopkg.in/bunsim/natrium.v1"
 
@@ -26,6 +27,8 @@ type Substrate struct {
 
 	cbtab map[uint16]func(segment)
 	cblok sync.Mutex
+
+	transport []net.Conn
 }
 
 func (ss *Substrate) regCallback(connid uint16, cback func(segment)) bool {
@@ -41,6 +44,11 @@ func (ss *Substrate) delCallback(connid uint16) {
 		delete(ss.cbtab, connid)
 	}
 	return
+}
+
+// RemotePK gets their PK.
+func (ss *Substrate) RemotePK() natrium.ECDHPublic {
+	return ss.transport[0].(*miniss.Socket).RemotePK()
 }
 
 // Tomb returns the substrate's associated tomb.
@@ -142,10 +150,11 @@ func (ss *Substrate) OpenConn() (cn net.Conn, err error) {
 // NewSubstrate creates a Substrate from the given connections.
 func NewSubstrate(transport []net.Conn) *Substrate {
 	toret := &Substrate{
-		upch:  make(chan segment),
-		opch:  make(chan segment, 256),
-		mtmb:  new(tomb.Tomb),
-		cbtab: make(map[uint16]func(segment)),
+		upch:      make(chan segment),
+		opch:      make(chan segment, 256),
+		mtmb:      new(tomb.Tomb),
+		cbtab:     make(map[uint16]func(segment)),
+		transport: transport,
 	}
 
 	// the watchdog

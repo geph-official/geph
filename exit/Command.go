@@ -1,6 +1,8 @@
 package exit
 
 import (
+	"database/sql"
+	"encoding/base32"
 	"encoding/json"
 	"flag"
 	"log"
@@ -15,9 +17,12 @@ import (
 type Command struct {
 	idSeed  string
 	bwLimit int
+	pgURL   string
 
 	identity natrium.EdDSAPrivate
 	edb      *entryDB
+
+	pgdb *sql.DB
 }
 
 // Name returns the name "exit".
@@ -32,6 +37,7 @@ func (*Command) Usage() string { return "" }
 // SetFlags sets the flag on the binder subcommand.
 func (cmd *Command) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.idSeed, "idSeed", "", "seed to use to generate private key")
+	f.StringVar(&cmd.idSeed, "pgURL", "127.0.0.1:5432", "location of the PostgreSQL account database")
 	f.IntVar(&cmd.bwLimit, "bwLimit", 100, "bandwidth limit for free sessions (Kbps)")
 }
 
@@ -48,8 +54,18 @@ func (cmd *Command) Execute(_ context.Context,
 	b64, _ := json.Marshal(cmd.identity.PublicKey())
 	log.Println("Exit started; public key is", string(b64))
 	cmd.edb = newEntryDB()
-	// run the stuff
+
+	// run the proxy
 	go cmd.doProxy()
+
+	// connect to the PostgreSQL database
+	pgUser := base32.StdEncoding.EncodeToString(
+		natrium.SecureHash(cmd.identity, []byte("geph-exit-pguser")[:5]))
+	pgPwd := base32.StdEncoding.EncodeToString(
+		natrium.SecureHash(cmd.identity, []byte("geph-exit-pgpwd")[:10]))
+	log.Println("** PostgreSQL details: uname", pgUser, "pwd", pgPwd, "**")
+
+	// run the exit API
 	http.HandleFunc("/update-node", cmd.handUpdateNode)
 	http.HandleFunc("/get-nodes", cmd.handGetNodes)
 	http.HandleFunc("/test-speed", cmd.handTestSpeed)

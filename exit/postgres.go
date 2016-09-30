@@ -17,10 +17,7 @@ func (cmd *Command) decAccBalance(uid string, amt int) (rem int, err error) {
 	}
 	defer tx.Rollback()
 	// get the current value
-	rw, err := tx.Query("SELECT Mbs FROM RemBw WHERE Uid = $1", uid)
-	if err != nil {
-		return
-	}
+	rw := tx.QueryRow("SELECT Mbs FROM RemBw WHERE Uid = $1", uid)
 	err = rw.Scan(&rem)
 	if err != nil {
 		return

@@ -16,8 +16,6 @@ func (cmd *Command) decAccBalance(uid string, amt int) (rem int, err error) {
 		return
 	}
 	defer tx.Rollback()
-	// we can tolerate inconsistency
-	tx.Exec("SET TRANSACTION READ COMMITTED")
 	// get the current value
 	rw, err := tx.Query("SELECT Mbs FROM RemBw WHERE Uid = $1", uid)
 	if err != nil {
@@ -35,5 +33,6 @@ func (cmd *Command) decAccBalance(uid string, amt int) (rem int, err error) {
 	}
 	// set the thing in the database to rem
 	tx.Exec("UPDATE RemBw SET Mbs = $1 WHERE Uid = $2", rem, uid)
+	tx.Commit()
 	return
 }

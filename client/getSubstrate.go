@@ -93,6 +93,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 	if err != nil {
 		return
 	}
+	log.Println(nds)
 	// step 2: for each exit node, ping all the entry nodes
 	entries := make(map[string][]entryInfo)
 	for ext, kee := range nds {
@@ -102,6 +103,7 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 		var resp *http.Response
 		resp, err = myHTTP.Do(req)
 		if err != nil {
+			log.Println(err.Error())
 			continue
 		}
 		var lol struct {
@@ -118,15 +120,18 @@ func (cmd *Command) getSubstrate() (ss *niaucchi.Substrate, err error) {
 			continue
 		}
 		if err != nil {
+			log.Println(err.Error())
 			continue
 		}
 		err = natrium.EdDSAPublic(kee).Verify(buf.Bytes(), sig)
 		if err != nil {
+			log.Println(err.Error())
 			continue
 		}
 		// now the thing has to be legit
 		err = json.NewDecoder(buf).Decode(&lol)
 		if err != nil {
+			log.Println(err.Error())
 			resp.Body.Close()
 			continue
 		}

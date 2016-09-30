@@ -7,6 +7,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
@@ -59,10 +60,10 @@ func (cmd *Command) Execute(_ context.Context,
 	go cmd.doProxy()
 
 	// connect to the PostgreSQL database
-	pgUser := base32.StdEncoding.EncodeToString(
-		natrium.SecureHash(cmd.identity, []byte("geph-exit-pguser")[:5]))
-	pgPwd := base32.StdEncoding.EncodeToString(
-		natrium.SecureHash(cmd.identity, []byte("geph-exit-pgpwd")[:10]))
+	pgUser := strings.ToLower(base32.StdEncoding.EncodeToString(
+		natrium.SecureHash(cmd.identity, []byte("geph-exit-pguser"))[:5]))
+	pgPwd := strings.ToLower(base32.StdEncoding.EncodeToString(
+		natrium.SecureHash(cmd.identity, []byte("geph-exit-pgpwd"))[:10]))
 	log.Println("** PostgreSQL details: uname", pgUser, "pwd", pgPwd, "**")
 
 	// run the exit API

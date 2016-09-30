@@ -61,9 +61,6 @@ func (cmd *Command) Execute(_ context.Context,
 	log.Println("** Public key is", string(b64), "**")
 	cmd.edb = newEntryDB()
 
-	// run the proxy
-	go cmd.doProxy()
-
 	// connect to the PostgreSQL database
 	pgUser := strings.ToLower(base32.StdEncoding.EncodeToString(
 		natrium.SecureHash(cmd.identity, []byte("geph-exit-pguser"))[:5]))
@@ -76,6 +73,9 @@ func (cmd *Command) Execute(_ context.Context,
 		panic(err.Error())
 	}
 	cmd.pgdb = db
+
+	// run the proxy
+	go cmd.doProxy()
 
 	// run the exit API
 	http.HandleFunc("/update-node", cmd.handUpdateNode)

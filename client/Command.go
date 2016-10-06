@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/base32"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -82,15 +81,6 @@ func (cmd *Command) Execute(_ context.Context,
 				dest, err := tinysocks.ReadRequest(clnt)
 				if err != nil {
 					return
-				}
-				host, port := strings.Split(dest, ":")[0], strings.Split(dest, ":")[1]
-				if net.ParseIP(host) == nil {
-					var ip string
-					ip, err = cmd.resolveName(host)
-					if err != nil {
-						return
-					}
-					dest = fmt.Sprintf("%v:%v", ip, port)
 				}
 				conn, err := myss.OpenConn()
 				if err != nil {

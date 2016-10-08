@@ -40,7 +40,7 @@ func (*Command) Usage() string { return "" }
 // SetFlags sets the flag on the binder subcommand.
 func (cmd *Command) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.idSeed, "idSeed", "", "seed to use to generate private key")
-	f.StringVar(&cmd.idSeed, "pgURL", "127.0.0.1:15432",
+	f.StringVar(&cmd.pgURL, "pgURL", "127.0.0.1:15432",
 		"location of the PostgreSQL account database")
 	f.IntVar(&cmd.bwLimit, "bwLimit", 400, "bandwidth limit for every session (KiB/s)")
 }

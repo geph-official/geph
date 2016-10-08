@@ -54,7 +54,7 @@ func (cmd *Command) Execute(_ context.Context,
 		panic("idSeed must be given")
 	}
 	// generate the real stuff from the flags
-	cmd.identity = natrium.EdDSADeriveKey([]byte(cmd.idSeed))
+	cmd.identity = natrium.EdDSADeriveKey(natrium.SecureHash([]byte(cmd.idSeed), nil))
 	b64, _ := json.Marshal(cmd.identity.PublicKey())
 	log.Println("** Public key is", string(b64), "**")
 	cmd.edb = newEntryDB()

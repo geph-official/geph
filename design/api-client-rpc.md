@@ -1,7 +1,7 @@
 ## Client REST-based RPC interface
 
 The client daemon exposes an RPC interface on localhost for communication with GUIs and other purposes. It's based upon pushing around JSON over HTTP because basically every language (Racket for desktop, Java for Android, etc) has a JSON parser and HTTP library.
-
+z
 This document is far from complete and will be added to as the stuff gets implemented.
 
 ### Summary of internal state

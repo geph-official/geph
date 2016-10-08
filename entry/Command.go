@@ -70,7 +70,7 @@ func (cmd *Command) Execute(_ context.Context,
 		myip := strings.Trim(string(buf.Bytes()), "\n ")
 		log.Println("my own IP address guessed:", myip)
 		// we obtain the exit info first
-		resp, err = myHTTP.Get("http://binder.geph.io:8080/exit-info")
+		resp, err = myHTTP.Get("https://binder.geph.io/exit-info")
 		if err != nil {
 			log.Println("WARNING: stuck while getting exit info from binder:", err.Error())
 			continue

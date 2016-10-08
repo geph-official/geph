@@ -17,7 +17,7 @@ func (cmd *Command) decAccBalance(uid string, amt int) (rem int, err error) {
 	}
 	defer tx.Rollback()
 	// get the current value
-	rw := tx.QueryRow("SELECT Mbs FROM RemBw WHERE Uid = $1", uid)
+	rw := tx.QueryRow("SELECT Mbs FROM AccBalances WHERE Uid = $1", uid)
 	err = rw.Scan(&rem)
 	if err != nil {
 		return
@@ -29,7 +29,7 @@ func (cmd *Command) decAccBalance(uid string, amt int) (rem int, err error) {
 		rem = 0
 	}
 	// set the thing in the database to rem
-	tx.Exec("UPDATE RemBw SET Mbs = $1 WHERE Uid = $2", rem, uid)
+	tx.Exec("UPDATE AccBalances SET Mbs = $1 WHERE Uid = $2", rem, uid)
 	tx.Commit()
 	return
 }

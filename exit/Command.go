@@ -2,13 +2,11 @@ package exit
 
 import (
 	"database/sql"
-	"encoding/base32"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
@@ -62,13 +60,8 @@ func (cmd *Command) Execute(_ context.Context,
 	cmd.edb = newEntryDB()
 
 	// connect to the PostgreSQL database
-	pgUser := strings.ToLower(base32.StdEncoding.EncodeToString(
-		natrium.SecureHash(cmd.identity, []byte("geph-exit-pguser"))[:5]))
-	pgPwd := strings.ToLower(base32.StdEncoding.EncodeToString(
-		natrium.SecureHash(cmd.identity, []byte("geph-exit-pgpwd"))[:10]))
-	log.Println("** PostgreSQL details: uname", pgUser, "pwd", pgPwd, "**")
 	db, err := sql.Open("postgres",
-		fmt.Sprintf("postgres://%v:%v@%v/postgres?sslmode=disable", pgUser, pgPwd, cmd.pgURL))
+		fmt.Sprintf("postgres://postgres:postgres@%v/postgres?sslmode=disable", cmd.pgURL))
 	if err != nil {
 		panic(err.Error())
 	}

@@ -64,7 +64,6 @@ func (ss *Substrate) AcceptConn() (cn net.Conn, err error) {
 		err = ss.mtmb.Err()
 		return
 	case msg = <-ss.opch:
-		log.Println("niaucchi: AcceptConn() accepted flOpen", msg.ConnID)
 	}
 	// register a callback
 	down := make(chan segment, 128)

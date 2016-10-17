@@ -2,7 +2,6 @@ package niaucchi
 
 import (
 	"io"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -76,7 +75,6 @@ func Listen(ocookie []byte, identity natrium.ECDHPrivate, addr string) (lsnr *Li
 					raw.Close()
 					return
 				}
-				log.Println("miniss listen done")
 				// read the multiplier
 				mlt := make([]byte, 1)
 				io.ReadFull(pipe, mlt)

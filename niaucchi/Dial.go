@@ -2,7 +2,6 @@ package niaucchi
 
 import (
 	"errors"
-	"log"
 	"net"
 	"time"
 
@@ -30,23 +29,19 @@ func DialSubstrate(ocookie []byte, ourSK natrium.ECDHPrivate,
 				return
 			}
 			if ocookie != nil {
-				log.Println("gonna obfs")
 				z, err = cluttershirt.Client(ocookie, z)
 				if err != nil {
 					return
 				}
-				log.Println("obfs dunn")
 			}
 			crypt, err := miniss.Handshake(z, ourSK)
 			if err != nil {
-				log.Println("ded here??")
 				return
 			}
 			if natrium.CTCompare(crypt.RemotePK(), theirPK) != 0 {
 				err = errors.New("authentication failure")
 				return
 			}
-			log.Println("miniss dunn")
 			conns[i] = crypt
 			_, err = conns[i].Write([]byte{byte(mult)})
 			_, err = conns[i].Write(connid)

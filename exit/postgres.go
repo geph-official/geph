@@ -1,14 +1,5 @@
 package exit
 
-/* SCHEMA
-
-CREATE TABLE RemBw (
-	Uid TEXT PRIMARY KEY,
-	Mbs INTEGER NOT NULL CHECK (Mbs > 0)
-)
-
-*/
-
 func (cmd *Command) decAccBalance(uid string, amt int) (rem int, err error) {
 	// grab a TX at the database
 	tx, err := cmd.pgdb.Begin()

@@ -1,31 +1,56 @@
 package client
 
 import (
-	"encoding/base32"
+	"crypto/tls"
 	"flag"
-	"io"
-	"log"
 	"net"
 	"net/http"
-	"strings"
-	"sync"
 	"time"
 
-	"github.com/ProjectNiwl/tinysocks"
+	"gopkg.in/bunsim/natrium.v1"
+
 	"github.com/bunsim/geph/niaucchi"
 	"github.com/bunsim/goproxy"
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
 	"golang.org/x/net/proxy"
-	"gopkg.in/bunsim/natrium.v1"
 )
+
+const cFRONT = "a0.awsstatic.com"
+const cHOST = "dtnins2n354c4.cloudfront.net"
+
+var binderPub natrium.EdDSAPublic
+
+func init() {
+	binderPub, _ = natrium.HexDecode("d25bcdc91961a6e9e6c74fbcd5eb977c18e7b1fe63a78ec62378b55aa5172654")
+}
+
+var myHTTP = &http.Client{
+	Transport: &http.Transport{
+		TLSHandshakeTimeout: time.Second * 10,
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
+		//DisableKeepAlives:   true,
+	},
+	Timeout: time.Second * 10,
+}
+
+type entryInfo struct {
+	Addr    string
+	Cookie  []byte
+	ExitKey natrium.EdDSAPublic
+}
 
 // Command is the client subcommand.
 type Command struct {
-	uname string
-	pwd   string
-
+	uname    string
+	pwd      string
 	identity natrium.ECDHPrivate
+
+	exitCache  map[string][]byte
+	entryCache map[string][]entryInfo
+	currTunn   *niaucchi.Substrate
+
+	smState func()
 }
 
 // Name returns the name "client".
@@ -47,61 +72,14 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 func (cmd *Command) Execute(_ context.Context,
 	f *flag.FlagSet,
 	args ...interface{}) subcommands.ExitStatus {
-	// before anything else, generate identity
+	// Derive the identity first
 	prek := natrium.SecureHash([]byte(cmd.pwd), []byte(cmd.uname))
 	cmd.identity = natrium.EdDSADeriveKey(
 		natrium.StretchKey(prek, make([]byte, natrium.PasswordSaltLen), 8, 64*1024*1024)).ToECDH()
-	log.Println("** Identity derived:", strings.ToLower(
-		base32.StdEncoding.EncodeToString(
-			natrium.SecureHash(cmd.identity.PublicKey(), nil)[:10])), "**")
-	var ss *niaucchi.Substrate
-	var sl sync.Mutex
-	// one thread does DNS
+	// Start the DNS daemon which should never stop
 	go cmd.doDNS()
-	// one thread does all the SOCKS stuff
-	go func() {
-		lsnr, err := net.Listen("tcp", "127.0.0.1:8781")
-		if err != nil {
-			panic(err.Error())
-		}
-		for {
-			clnt, err := lsnr.Accept()
-			if err != nil {
-				panic(err.Error())
-			}
-			go func() {
-				defer clnt.Close()
-				var myss *niaucchi.Substrate
-				sl.Lock()
-				myss = ss
-				sl.Unlock()
-				if myss == nil {
-					return
-				}
-				dest, err := tinysocks.ReadRequest(clnt)
-				if err != nil {
-					return
-				}
-				conn, err := myss.OpenConn()
-				if err != nil {
-					return
-				}
-				defer conn.Close()
-				tinysocks.CompleteRequest(0x00, clnt)
-				conn.Write([]byte{byte(len(dest))})
-				conn.Write([]byte(dest))
-				// forward
-				log.Println("proxying to", dest)
-				go func() {
-					defer conn.Close()
-					defer clnt.Close()
-					io.Copy(clnt, conn)
-				}()
-				io.Copy(conn, clnt)
-			}()
-		}
-	}()
-	// another one does HTTP
+	// Start the HTTP which should never stop
+	// spawn the HTTP server
 	srv := goproxy.NewProxyHttpServer()
 	srv.Tr = &http.Transport{
 		Dial: func(n, d string) (net.Conn, error) {
@@ -111,24 +89,17 @@ func (cmd *Command) Execute(_ context.Context,
 			}
 			return dler.Dial(n, d)
 		},
-		DisableKeepAlives: true,
+		MaxIdleConns: 0,
 	}
 	go func() {
 		err := http.ListenAndServe("127.0.0.1:8780", srv)
-		panic(err.Error)
-	}()
-	// the other constantly revives the stuff
-	for {
-	retry:
-		nss, err := cmd.getSubstrate()
 		if err != nil {
-			log.Println("failed in obtaining substrate:", err.Error())
-			time.Sleep(time.Second)
-			goto retry
+			panic(err.Error)
 		}
-		sl.Lock()
-		ss = nss
-		sl.Unlock()
-		nss.Tomb().Wait()
+	}()
+	// Start the state machine in smFindEntry
+	cmd.smState = cmd.smFindEntry
+	for {
+		cmd.smState()
 	}
 }

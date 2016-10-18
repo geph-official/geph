@@ -47,6 +47,7 @@ func (cmd *Command) smConnEntry() {
 		cmd.smState = cmd.smClearCache
 		return
 	case ss := <-retline:
+		close(dedline)
 		cmd.currTunn = ss
 		cmd.smState = cmd.smVerifyAccount
 		return

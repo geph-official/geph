@@ -5,6 +5,7 @@ import (
 	"flag"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"gopkg.in/bunsim/natrium.v1"
@@ -50,6 +51,14 @@ type Command struct {
 	entryCache map[string][]entryInfo
 	currTunn   *niaucchi.Substrate
 
+	stats struct {
+		status  string
+		rxBytes uint64
+		txBytes uint64
+		stTime  time.Time
+		sync.RWMutex
+	}
+
 	smState func()
 }
 
@@ -76,10 +85,13 @@ func (cmd *Command) Execute(_ context.Context,
 	prek := natrium.SecureHash([]byte(cmd.pwd), []byte(cmd.uname))
 	cmd.identity = natrium.EdDSADeriveKey(
 		natrium.StretchKey(prek, make([]byte, natrium.PasswordSaltLen), 8, 64*1024*1024)).ToECDH()
+	// Initialize stats
+	cmd.stats.status = "connecting"
+	cmd.stats.stTime = time.Now()
 	// Start the DNS daemon which should never stop
 	go cmd.doDNS()
 	// Start the HTTP which should never stop
-	// spawn the HTTP server
+	// spawn the HTTP proxy server
 	srv := goproxy.NewProxyHttpServer()
 	srv.Tr = &http.Transport{
 		Dial: func(n, d string) (net.Conn, error) {
@@ -91,6 +103,14 @@ func (cmd *Command) Execute(_ context.Context,
 		},
 		MaxIdleConns: 0,
 	}
+	// spawn the RPC servers
+	go func() {
+		http.HandleFunc("/summary", cmd.servSummary)
+		err := http.ListenAndServe("127.0.0.1:8790", nil)
+		if err != nil {
+			panic(err.Error)
+		}
+	}()
 	go func() {
 		err := http.ListenAndServe("127.0.0.1:8780", srv)
 		if err != nil {

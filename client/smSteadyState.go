@@ -1,7 +1,6 @@
 package client
 
 import (
-	"io"
 	"log"
 	"net"
 
@@ -14,6 +13,15 @@ import (
 func (cmd *Command) smSteadyState() {
 	log.Println("** => SteadyState **")
 	defer log.Println("** <= SteadyState **")
+	// change stats
+	cmd.stats.Lock()
+	cmd.stats.status = "connected"
+	cmd.stats.Unlock()
+	defer func() {
+		cmd.stats.Lock()
+		cmd.stats.status = "connecting"
+		cmd.stats.Unlock()
+	}()
 	// spawn the SOCKS5 server
 	socksListener, err := net.Listen("tcp", "127.0.0.1:8781")
 	if err != nil {
@@ -59,9 +67,9 @@ func (cmd *Command) doSocks(lsnr net.Listener) {
 			go func() {
 				defer conn.Close()
 				defer clnt.Close()
-				io.Copy(clnt, conn)
+				ctrCopy(clnt, conn, &cmd.stats.rxBytes)
 			}()
-			io.Copy(conn, clnt)
+			ctrCopy(conn, clnt, &cmd.stats.txBytes)
 		}()
 	}
 }

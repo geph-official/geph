@@ -27,6 +27,30 @@ func (cmd *Command) servSummary(w http.ResponseWriter, r *http.Request) {
 	w.Write(bts)
 }
 
+func (cmd *Command) servNetinfo(w http.ResponseWriter, r *http.Request) {
+	var resp struct {
+		Exit        string
+		Entry       string
+		Protocol    string
+		ActiveTunns map[string]string
+	}
+	eip, err := cmd.resolveName(cmd.stats.netinfo.exit)
+	cmd.stats.RLock()
+	defer cmd.stats.RUnlock()
+	csn := cmd.stats.netinfo
+	if err == nil {
+		resp.Exit = eip
+	} else {
+		resp.Exit = "FAIL"
+	}
+	resp.Entry = csn.entry
+	resp.Protocol = csn.prot
+	resp.ActiveTunns = csn.tuns
+	w.Header().Add("content-type", "application/json")
+	bts, _ := json.MarshalIndent(&resp, "", "    ")
+	w.Write(bts)
+}
+
 // io.Copy, except it increments a counter in real-time using atomic primitives
 func ctrCopy(dest io.Writer, orig io.Reader, ctr *uint64) error {
 	buffer := make([]byte, 32768)

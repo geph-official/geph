@@ -63,7 +63,15 @@ func (cmd *Command) doSocks(lsnr net.Listener) {
 			conn.Write([]byte(dest))
 			// forward
 			log.Println("tunnel open", dest)
+			cmd.stats.Lock()
+			cmd.stats.netinfo.tuns[clnt.RemoteAddr().String()] = dest
+			cmd.stats.Unlock()
 			defer log.Println("tunnel clos", dest)
+			defer func() {
+				cmd.stats.Lock()
+				delete(cmd.stats.netinfo.tuns, clnt.RemoteAddr().String())
+				cmd.stats.Unlock()
+			}()
 			go func() {
 				defer conn.Close()
 				defer clnt.Close()

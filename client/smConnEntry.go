@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"gopkg.in/bunsim/natrium.v1"
+
 	"github.com/bunsim/geph/niaucchi"
 )
 
@@ -19,6 +21,7 @@ func (cmd *Command) smConnEntry() {
 	dedline := make(chan bool)
 	for exit, entries := range cmd.entryCache {
 		for _, xaxa := range entries {
+			exit := exit
 			xaxa := xaxa
 			log.Println(xaxa.Addr, "from", exit)
 			go func() {
@@ -32,6 +35,12 @@ func (cmd *Command) smConnEntry() {
 				}
 				select {
 				case retline <- cand:
+					cmd.stats.Lock()
+					cmd.stats.netinfo.entry = natrium.HexEncode(
+						natrium.SecureHash(xaxa.Cookie, nil)[:8])
+					cmd.stats.netinfo.exit = exit
+					cmd.stats.netinfo.prot = "cl-ni-1"
+					cmd.stats.Unlock()
 					log.Println(xaxa.Addr, "WINNER")
 				case <-dedline:
 					log.Println(xaxa.Addr, "failed race")

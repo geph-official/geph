@@ -56,6 +56,14 @@ type Command struct {
 		rxBytes uint64
 		txBytes uint64
 		stTime  time.Time
+
+		netinfo struct {
+			exit  string
+			entry string
+			prot  string
+			tuns  map[string]string
+		}
+
 		sync.RWMutex
 	}
 
@@ -88,6 +96,7 @@ func (cmd *Command) Execute(_ context.Context,
 	// Initialize stats
 	cmd.stats.status = "connecting"
 	cmd.stats.stTime = time.Now()
+	cmd.stats.netinfo.tuns = make(map[string]string)
 	// Start the DNS daemon which should never stop
 	go cmd.doDNS()
 	// Start the HTTP which should never stop
@@ -106,6 +115,7 @@ func (cmd *Command) Execute(_ context.Context,
 	// spawn the RPC servers
 	go func() {
 		http.HandleFunc("/summary", cmd.servSummary)
+		http.HandleFunc("/netinfo", cmd.servNetinfo)
 		err := http.ListenAndServe("127.0.0.1:8790", nil)
 		if err != nil {
 			panic(err.Error)

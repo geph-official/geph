@@ -139,6 +139,7 @@ func (cmd *Command) Execute(_ context.Context,
 		if err != nil {
 			log.Println("cache: cannot read sec.identity:", err.Error())
 		} else {
+			cmd.identity = lol
 			log.Println("identity (cache):", touid(cmd.identity.PublicKey()))
 		}
 	}

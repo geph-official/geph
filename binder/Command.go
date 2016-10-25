@@ -48,6 +48,7 @@ func (cmd *Command) Execute(_ context.Context,
 	// generate the real stuff from the flags
 	cmd.identity = natrium.EdDSADeriveKey([]byte(cmd.idSeed))
 	log.Println("Binder started; public key is", natrium.HexEncode(cmd.identity.PublicKey()))
+	log.Println("Listening on 127.0.0.1:8080. Please set up nginx or a similar reverse proxy to provide service on ports 80 and 443.")
 	// run the stuff
 	http.HandleFunc("/exit-info", cmd.handExitInfo)
 	rp := &httputil.ReverseProxy{
@@ -61,7 +62,7 @@ func (cmd *Command) Execute(_ context.Context,
 		},
 	}
 	http.Handle("/exits/", rp)
-	if http.ListenAndServe(":8080", nil) != nil {
+	if http.ListenAndServe("127.0.0.1:8080", nil) != nil {
 		return -1
 	}
 	return 0

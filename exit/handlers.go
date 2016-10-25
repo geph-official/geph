@@ -1,10 +1,12 @@
 package exit
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"time"
 
@@ -32,13 +34,29 @@ func (cmd *Command) handUpdateNode(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Cache-Control", "no-cache")
+	w.Header().Add("Cache-Control", "max-age=500")
 	var tosend struct {
 		Expires string
 		Nodes   map[string][]byte
 	}
+
+	log.Println(r.Header)
+
+	// get the IP of the client. if the request comes from the binder, we trust the X-Forwarded-For
+	binderips, err := net.LookupAddr("binder.geph.io")
+	if err != nil {
+		return
+	}
+	if r.RemoteAddr == binderips[0] {
+		r.RemoteAddr = r.Header.Get("X-Forwarded-For")
+		log.Println("IP of client in get-nodes:", r.RemoteAddr, "(forwarded)")
+	} else {
+		log.Println("IP of client in get-nodes:", r.RemoteAddr)
+	}
+
 	tosend.Expires = time.Now().Add(time.Hour).Format(time.RFC3339)
-	tosend.Nodes = cmd.edb.GetNodes(0)
+	tosend.Nodes = cmd.edb.GetNodes(
+		binary.BigEndian.Uint64(natrium.SecureHash([]byte(r.RemoteAddr), nil)[:8]))
 	bts, _ := json.Marshal(&tosend)
 	sig := cmd.identity.Sign(bts)
 	w.Header().Add("X-Geph-Signature", natrium.HexEncode(sig))

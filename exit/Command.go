@@ -42,7 +42,7 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.idSeed, "idSeed", "", "seed to use to generate private key")
 	f.StringVar(&cmd.pgURL, "pgURL", "127.0.0.1:15432",
 		"location of the PostgreSQL account database")
-	f.IntVar(&cmd.bwLimit, "bwLimit", 400, "bandwidth limit for every session (KiB/s)")
+	f.IntVar(&cmd.bwLimit, "bwLimit", 600, "bandwidth limit for every session (KiB/s)")
 }
 
 // Execute executes the exit subcommand.

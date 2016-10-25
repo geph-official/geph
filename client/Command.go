@@ -61,6 +61,8 @@ type Command struct {
 	entryCache map[string][]entryInfo
 	currTunn   *niaucchi.Substrate
 
+	proxtrans *http.Transport
+
 	stats struct {
 		status  string
 		rxBytes uint64
@@ -100,6 +102,17 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 func (cmd *Command) Execute(_ context.Context,
 	f *flag.FlagSet,
 	args ...interface{}) subcommands.ExitStatus {
+	// set up proxtrans
+	cmd.proxtrans = &http.Transport{
+		Dial: func(n, d string) (net.Conn, error) {
+			dler, err := proxy.SOCKS5("tcp", "localhost:8781", nil, proxy.Direct)
+			if err != nil {
+				panic(err.Error())
+			}
+			return dler.Dial(n, d)
+		},
+		MaxIdleConns: 0,
+	}
 	// touid
 	touid := func(b []byte) string {
 		uid := strings.ToLower(
@@ -126,9 +139,8 @@ func (cmd *Command) Execute(_ context.Context,
 		if err != nil {
 			log.Println("cache: cannot read sec.identity:", err.Error())
 		} else {
-			cmd.identity = natrium.ECDHPrivate(lol)
+			log.Println("identity (cache):", touid(cmd.identity.PublicKey()))
 		}
-		log.Println("identity (cache):", touid(cmd.identity.PublicKey()))
 	}
 	// Derive the identity
 	if cmd.identity == nil {
@@ -153,16 +165,7 @@ func (cmd *Command) Execute(_ context.Context,
 	// Start the HTTP which should never stop
 	// spawn the HTTP proxy server
 	srv := goproxy.NewProxyHttpServer()
-	srv.Tr = &http.Transport{
-		Dial: func(n, d string) (net.Conn, error) {
-			dler, err := proxy.SOCKS5("tcp", "localhost:8781", nil, proxy.Direct)
-			if err != nil {
-				panic(err.Error())
-			}
-			return dler.Dial(n, d)
-		},
-		MaxIdleConns: 0,
-	}
+	srv.Tr = cmd.proxtrans
 	// spawn the RPC servers
 	go func() {
 		http.HandleFunc("/summary", cmd.servSummary)

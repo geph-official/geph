@@ -2,9 +2,14 @@ package client
 
 import (
 	"crypto/tls"
+	"database/sql"
+	"encoding/base32"
 	"flag"
+	"fmt"
+	"log"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,6 +20,9 @@ import (
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
 	"golang.org/x/net/proxy"
+
+	// SQLite3
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const cFRONT = "a0.awsstatic.com"
@@ -30,7 +38,7 @@ var myHTTP = &http.Client{
 	Transport: &http.Transport{
 		TLSHandshakeTimeout: time.Second * 10,
 		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
-		//DisableKeepAlives:   true,
+		DisableKeepAlives:   true,
 	},
 	Timeout: time.Second * 10,
 }
@@ -46,7 +54,9 @@ type Command struct {
 	uname    string
 	pwd      string
 	identity natrium.ECDHPrivate
+	cachedir string
 
+	cdb        *sql.DB
 	exitCache  map[string][]byte
 	entryCache map[string][]entryInfo
 	currTunn   *niaucchi.Substrate
@@ -83,16 +93,57 @@ func (*Command) Usage() string { return "" }
 func (cmd *Command) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.uname, "uname", "test", "username")
 	f.StringVar(&cmd.pwd, "pwd", "removekebab", "password")
+	f.StringVar(&cmd.cachedir, "cachedir", "", "cache directory; if empty then no cache is used")
 }
 
 // Execute executes a client subcommand.
 func (cmd *Command) Execute(_ context.Context,
 	f *flag.FlagSet,
 	args ...interface{}) subcommands.ExitStatus {
-	// Derive the identity first
-	prek := natrium.SecureHash([]byte(cmd.pwd), []byte(cmd.uname))
-	cmd.identity = natrium.EdDSADeriveKey(
-		natrium.StretchKey(prek, make([]byte, natrium.PasswordSaltLen), 8, 64*1024*1024)).ToECDH()
+	// touid
+	touid := func(b []byte) string {
+		uid := strings.ToLower(
+			base32.StdEncoding.EncodeToString(
+				natrium.SecureHash(b, nil)[:10]))
+		return uid
+	}
+	// try to connect to the cache first
+	if cmd.cachedir != "" {
+		var err error
+		cmd.cdb, err = sql.Open("sqlite3", fmt.Sprintf("%v/%x.db", cmd.cachedir,
+			natrium.SecureHash([]byte(cmd.uname), []byte(cmd.pwd))[:8]))
+		if err != nil {
+			panic(err.Error())
+		}
+		// just a simple key-value pair lol
+		cmd.cdb.Exec("CREATE TABLE IF NOT EXISTS main (k UNIQUE NOT NULL, v)")
+	}
+	// Try to read the identity from the cache first
+	if cmd.cdb != nil {
+		row := cmd.cdb.QueryRow("SELECT v FROM main WHERE k = 'sec.identity'")
+		var lol []byte
+		err := row.Scan(&lol)
+		if err != nil {
+			log.Println("cache: cannot read sec.identity:", err.Error())
+		} else {
+			cmd.identity = natrium.ECDHPrivate(lol)
+		}
+		log.Println("identity (cache):", touid(cmd.identity.PublicKey()))
+	}
+	// Derive the identity
+	if cmd.identity == nil {
+		prek := natrium.SecureHash([]byte(cmd.pwd), []byte(cmd.uname))
+		cmd.identity = natrium.EdDSADeriveKey(
+			natrium.StretchKey(prek, make([]byte, natrium.PasswordSaltLen), 8, 64*1024*1024)).ToECDH()
+		// Place identity in cache if available
+		if cmd.cdb != nil {
+			_, err := cmd.cdb.Exec("INSERT INTO main VALUES ('sec.identity', $1)", []byte(cmd.identity))
+			if err != nil {
+				log.Println("cache: cannot store sec.identity:", err.Error())
+			}
+		}
+		log.Println("identity (deriv):", touid(cmd.identity.PublicKey()))
+	}
 	// Initialize stats
 	cmd.stats.status = "connecting"
 	cmd.stats.stTime = time.Now()

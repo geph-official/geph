@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	natrium "gopkg.in/bunsim/natrium.v1"
+	"gopkg.in/bunsim/natrium.v1"
 )
 
 // smQueryBinder is the QueryBinder state.

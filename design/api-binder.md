@@ -43,7 +43,7 @@ Information about an account can be obtained at `POST /account-summary`. The req
 
     {
         "PubKey": client's public key,
-        "DateSig": signature of current date (YYYY-MM-DD) with client's public key
+        "DateSig": signature of "sig-account-summary" with client's public key
     }
 
 The response contains a summary of information about an account:

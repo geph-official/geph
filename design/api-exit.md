@@ -15,7 +15,7 @@ The exit node always claims success, but will do its own testing.
 
 ### Obtaining info about entry nodes
 
-Clients obtain info by doing `POST /get-nodes`. The payload is a proof of work. The response is:
+Clients obtain info by doing `POST /get-nodes`. The payload is `sig-get-nodes`, with a signature in the `X-Geph-Signature` header, and the full public key in `X-Geph-Pubkey`. The response is:
 
     {
         "Expires": ISO 8601 24 hrs after,

@@ -71,4 +71,7 @@ func (cmd *Command) smClearCache() {
 	cmd.entryCache = nil
 	cmd.exitCache = nil
 	cmd.smState = cmd.smFindEntry
+	if cmd.cdb != nil {
+		cmd.cdb.Exec("DELETE FROM main WHERE k='bst.entries'")
+	}
 }

@@ -58,9 +58,6 @@ func (edb *entryDB) AddNode(addr string, cookie []byte) error {
 func (edb *entryDB) GetNodes(seed uint64) (nodes map[string][]byte) {
 	edb.lok.RLock()
 	defer edb.lok.RUnlock()
-	if seed != 0 {
-		panic("GetNodes doesn't actually support a seed yet")
-	}
 	// seed an insecure RNG; the insecurity of the RNG shouldn't be an issue
 	badrng := rand.New(rand.NewSource(int64(seed)))
 	var allnodes []string

@@ -48,13 +48,12 @@ func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 		log.Println("cannot lookup binder.geph.io:", err.Error())
 		return
 	}
-	var rmadr string
-	if r.RemoteAddr == binderips[0] {
+	taddr, _ := net.ResolveTCPAddr("tcp", r.RemoteAddr)
+	rmadr := taddr.IP.String()
+	if rmadr == binderips[0] {
 		rmadr = r.Header.Get("X-Forwarded-For")
 		log.Println("IP of client in get-nodes:", rmadr, "(forwarded)")
 	} else {
-		taddr, _ := net.ResolveTCPAddr("tcp", r.RemoteAddr)
-		rmadr = taddr.IP.String()
 		log.Println("IP of client in get-nodes:", rmadr)
 	}
 

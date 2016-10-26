@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"gopkg.in/bunsim/natrium.v1"
@@ -51,7 +52,7 @@ func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 	taddr, _ := net.ResolveTCPAddr("tcp", r.RemoteAddr)
 	rmadr := taddr.IP.String()
 	if rmadr == binderips[0] {
-		rmadr = r.Header.Get("X-Forwarded-For")
+		rmadr = strings.Split(r.Header.Get("X-Forwarded-For"), ",")[0]
 		log.Println("IP of client in get-nodes:", rmadr, "(forwarded)")
 	} else {
 		log.Println("IP of client in get-nodes:", rmadr)

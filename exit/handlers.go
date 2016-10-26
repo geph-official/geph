@@ -45,6 +45,7 @@ func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 	// get the IP of the client. if the request comes from the binder, we trust the X-Forwarded-For
 	binderips, err := net.LookupAddr("binder.geph.io")
 	if err != nil {
+		log.Println("cannot lookup binder.geph.io:", err.Error())
 		return
 	}
 	if r.RemoteAddr == binderips[0] {

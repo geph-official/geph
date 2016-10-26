@@ -23,7 +23,7 @@ The method is `GET /exit-info`. The response is:
 
 where the server names are hostnames, and the server public key is encoded in Base64.
 
-The hex-encoded signature of the entire response, signed with a hard-coded key kept offline, is put in the header `X-Geph-Signature`. The signature is required to prevent subversion of the list of exits even when using domain fronting, or even when the binder's TLS private keys are stolen.
+The hex-encoded signature of the entire response, signed with a hard-coded key ~~kept offline~~, is put in the header `X-Geph-Signature`. The signature is required to prevent subversion of the list of exits even when using domain fronting, or even when the binder's TLS private keys are stolen.
 
 **Note**: the expiry date MUST not be more than 1 month in the future; this mitigates replay attacks.
 
@@ -43,7 +43,7 @@ Information about an account can be obtained at `POST /account-summary`. The req
 
     {
         "PubKey": client's public key,
-        "DateSig": signature of "sig-account-summary" with client's public key
+        "AuthTok": signature of "token" with client's public key
     }
 
 The response contains a summary of information about an account:

@@ -53,7 +53,8 @@ func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 		rmadr = r.Header.Get("X-Forwarded-For")
 		log.Println("IP of client in get-nodes:", rmadr, "(forwarded)")
 	} else {
-		rmadr, _ = net.ResolveTCPAddr("tcp", r.RemoteAddr).IP.String()
+		taddr, _ := net.ResolveTCPAddr("tcp", r.RemoteAddr)
+		rmadr = taddr.IP.String()
 		log.Println("IP of client in get-nodes:", rmadr)
 	}
 

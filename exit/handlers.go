@@ -41,8 +41,6 @@ func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 		Nodes   map[string][]byte
 	}
 
-	log.Println(r.Header)
-
 	// get the IP of the client. if the request comes from the binder, we trust the X-Forwarded-For
 	binderips, err := net.LookupHost("binder.geph.io")
 	if err != nil {
@@ -53,9 +51,9 @@ func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 	rmadr := taddr.IP.String()
 	if rmadr == binderips[0] {
 		rmadr = strings.Split(r.Header.Get("X-Forwarded-For"), ",")[0]
-		log.Println("IP of client in get-nodes:", rmadr, "(forwarded)")
+		//log.Println("IP of client in get-nodes:", rmadr, "(forwarded)")
 	} else {
-		log.Println("IP of client in get-nodes:", rmadr)
+		//log.Println("IP of client in get-nodes:", rmadr)
 	}
 
 	tosend.Expires = time.Now().Add(time.Hour).Format(time.RFC3339)

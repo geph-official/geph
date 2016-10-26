@@ -48,16 +48,18 @@ func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 		log.Println("cannot lookup binder.geph.io:", err.Error())
 		return
 	}
+	var rmadr string
 	if r.RemoteAddr == binderips[0] {
-		r.RemoteAddr = r.Header.Get("X-Forwarded-For")
-		log.Println("IP of client in get-nodes:", r.RemoteAddr, "(forwarded)")
+		rmadr = r.Header.Get("X-Forwarded-For")
+		log.Println("IP of client in get-nodes:", rmadr, "(forwarded)")
 	} else {
-		log.Println("IP of client in get-nodes:", r.RemoteAddr)
+		rmadr = net.ResolveTCPAddr("tcp", r.RemoteAddr).IP.String()
+		log.Println("IP of client in get-nodes:", rmadr)
 	}
 
 	tosend.Expires = time.Now().Add(time.Hour).Format(time.RFC3339)
 	tosend.Nodes = cmd.edb.GetNodes(
-		binary.BigEndian.Uint64(natrium.SecureHash([]byte(r.RemoteAddr), nil)[:8]))
+		binary.BigEndian.Uint64(natrium.SecureHash([]byte(rmadr), nil)[:8]))
 	bts, _ := json.Marshal(&tosend)
 	sig := cmd.identity.Sign(bts)
 	w.Header().Add("X-Geph-Signature", natrium.HexEncode(sig))

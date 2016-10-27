@@ -163,7 +163,7 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 			select {
 			case <-toret.mtmb.Dying():
 				return nil
-			case <-time.After(time.Minute * 2):
+			case <-time.After(time.Minute * 5):
 				return io.ErrClosedPipe
 			case <-kikr:
 			}
@@ -223,7 +223,7 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 	tmb.Go(func() error {
 		for {
 			select {
-			case <-time.After(time.Minute):
+			case <-time.After(time.Minute * 2):
 			case <-tmb.Dying():
 				return nil
 			}

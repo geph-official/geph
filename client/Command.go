@@ -173,13 +173,13 @@ func (cmd *Command) Execute(_ context.Context,
 		http.HandleFunc("/netinfo", cmd.servNetinfo)
 		err := http.ListenAndServe("127.0.0.1:8790", nil)
 		if err != nil {
-			panic(err.Error)
+			panic(err.Error())
 		}
 	}()
 	go func() {
 		err := http.ListenAndServe("127.0.0.1:8780", srv)
 		if err != nil {
-			panic(err.Error)
+			panic(err.Error())
 		}
 	}()
 	// Start the state machine in smFindEntry

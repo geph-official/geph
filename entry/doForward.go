@@ -16,9 +16,6 @@ func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest *string) {
 		if err != nil {
 			return
 		}
-		// keepalive on *server* side to prevent deep-sleep timeout on mobile
-		raw.(*net.TCPConn).SetKeepAlive(true)
-		raw.(*net.TCPConn).SetKeepAlivePeriod(time.Second * 60)
 		go func() {
 			defer raw.Close()
 			clnt, err := cluttershirt.Server(cookie, raw)

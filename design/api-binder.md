@@ -42,9 +42,12 @@ Security is provided by signatures at the exits, as detailed in the document abo
 Information about an account can be obtained at `POST /account-summary`. The request contains the following JSON body:
 
     {
-        "PubKey": client's public key,
-        "AuthTok": signature of "token" with client's public key
+        "PrivKey": client's private key
     }
+
+Yes, the private key is handed over to the binder. This is not an issue, since the private key is not used to ensure end-to-end encryption; even if the private key were to be intercepted, users still cannot be eavesdropped upon.
+
+We give over the private key instead of the username and password to make the expensive hashing happen on the client side.
 
 The response contains a summary of information about an account:
 

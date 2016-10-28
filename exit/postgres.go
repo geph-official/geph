@@ -7,6 +7,7 @@ func (cmd *Command) decAccBalance(uid string, amt int) (rem int, err error) {
 		return
 	}
 	defer tx.Rollback()
+	tx.Exec("SET TRANSACTION SERIALIZABLE")
 	// get the current value
 	rw := tx.QueryRow("SELECT Mbs FROM AccBalances WHERE Uid = $1", uid)
 	err = rw.Scan(&rem)

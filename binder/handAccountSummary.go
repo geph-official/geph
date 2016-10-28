@@ -47,7 +47,7 @@ func (cmd *Command) handAccountSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	_, err = tx.Exec("SET TRANSACTION SERIALIZABLE")
+	_, err = tx.Exec("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
 	if err != nil {
 		log.Println("handAccountSummary:", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

@@ -53,7 +53,8 @@ func (cmd *Command) Execute(_ context.Context,
 	}
 	// connect to the postgres
 	var err error
-	cmd.pgdb, err = sql.Open("postgres", "postgres://localhost/postgres?sslmode=disable")
+	cmd.pgdb, err = sql.Open("postgres",
+		"postgres://postgres:postgres@localhost/postgres?sslmode=disable")
 	if err != nil {
 		panic(err.Error())
 	}

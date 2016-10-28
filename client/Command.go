@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"encoding/base32"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -161,6 +162,8 @@ func (cmd *Command) Execute(_ context.Context,
 			}
 		}
 		log.Println("identity (deriv):", touid(cmd.identity.PublicKey()))
+		j, _ := json.Marshal(cmd.identity)
+		log.Println("identity (cache):", string(j))
 	}
 	// Initialize stats
 	cmd.stats.status = "connecting"

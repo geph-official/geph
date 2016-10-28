@@ -42,6 +42,7 @@ func (cmd *Command) smVerifyAccount() {
 		}
 		cmd.smState = cmd.smSteadyState
 	} else {
+		log.Println("** FATAL: account info is wrong! **")
 		os.Exit(403)
 	}
 }

@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"log"
 	"net"
 
@@ -41,6 +42,7 @@ func (cmd *Command) dialTun(dest string) (conn net.Conn, err error) {
 	var myss *niaucchi.Substrate
 	myss = cmd.currTunn
 	if myss == nil {
+		err = errors.New("null")
 		return
 	}
 	conn, err = myss.OpenConn()

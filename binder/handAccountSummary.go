@@ -47,7 +47,12 @@ func (cmd *Command) handAccountSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	tx.Exec("SET TRANSACTION SERIALIZABLE")
+	err = tx.Exec("SET TRANSACTION SERIALIZABLE")
+	if err != nil {
+		log.Println("handAccountSummary:", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	err = tx.QueryRow(`SELECT Uname, Ctime, Mbs
 		FROM AccInfo, AccBalances
 		WHERE AccInfo.Uid = AccBalances.Uid

@@ -23,7 +23,7 @@ This is used to display detailed network information, useful for nerds or for de
     {
         "Exit": IP address,
         "Entry": first 64 bits of hash of cookie, hex-encoded,
-        "Protocol": currently only "cl-ni-1" but in the future can identify different protocols,
+        "Protocol": currently only "cl-ni-mi" but in the future can identify different protocols,
         "ActiveTunns": ["host:port"...]
     }
 

@@ -17,6 +17,11 @@ func (cmd *Command) smConnEntry() {
 	log.Println("** => ConnEntry **")
 	defer log.Println("** <= ConnEntry **")
 
+	FANOUT := 6
+	if cmd.powersave {
+		FANOUT = 1
+	}
+
 	retline := make(chan *niaucchi.Substrate)
 	dedline := make(chan bool)
 	for exit, entries := range cmd.entryCache {
@@ -28,7 +33,7 @@ func (cmd *Command) smConnEntry() {
 				cand, merr := niaucchi.DialSubstrate(xaxa.Cookie,
 					cmd.identity,
 					xaxa.ExitKey.ToECDH(),
-					xaxa.Addr, 8)
+					xaxa.Addr, FANOUT)
 				if merr != nil {
 					log.Println(xaxa.Addr, "failed right away:", merr)
 					return

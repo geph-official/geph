@@ -51,10 +51,11 @@ type entryInfo struct {
 
 // Command is the client subcommand.
 type Command struct {
-	uname    string
-	pwd      string
-	identity natrium.ECDHPrivate
-	cachedir string
+	uname     string
+	pwd       string
+	identity  natrium.ECDHPrivate
+	cachedir  string
+	powersave bool
 
 	cdb        *sql.DB
 	exitCache  map[string][]byte
@@ -96,6 +97,7 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.uname, "uname", "test", "username")
 	f.StringVar(&cmd.pwd, "pwd", "removekebab", "password")
 	f.StringVar(&cmd.cachedir, "cachedir", "", "cache directory; if empty then no cache is used")
+	f.BoolVar(&cmd.powersave, "powersave", false, "optimize for saving power on mobile devices, at the cost of some performance")
 }
 
 // Execute executes a client subcommand.

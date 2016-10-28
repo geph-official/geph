@@ -2,7 +2,6 @@ package niaucchi
 
 import (
 	"errors"
-	"io"
 	"log"
 	"net"
 	"sync"
@@ -16,8 +15,14 @@ import (
 	"gopkg.in/tomb.v2"
 )
 
-// ErrProtocolFail indicates an error due to a protocol failure.
+// ErrProtocolFail indicates a fatal protocol failure.
 var ErrProtocolFail = errors.New("protocol failure")
+
+// ErrOperationTimeout indicates that an operation (such as waiting for an ack) timed out fatally.
+var ErrOperationTimeout = errors.New("operation timed out")
+
+// ErrWatchdogTimeout indicates that the watchdog timed out fatally.
+var ErrWatchdogTimeout = errors.New("watchdog timed out")
 
 // Substrate represents a pool of connections over which carried connections are multiplexed.
 type Substrate struct {
@@ -121,7 +126,7 @@ func (ss *Substrate) OpenConn() (cn net.Conn, err error) {
 		err = ss.mtmb.Err()
 		return
 	case <-time.After(time.Second * 15):
-		ss.mtmb.Kill(errors.New("timeout"))
+		ss.mtmb.Kill(ErrOperationTimeout)
 		err = ss.mtmb.Err()
 		return
 	}
@@ -140,7 +145,7 @@ func (ss *Substrate) OpenConn() (cn net.Conn, err error) {
 	case <-ss.mtmb.Dying():
 		err = ss.mtmb.Err()
 	case <-time.After(time.Second * 15):
-		ss.mtmb.Kill(errors.New("timeout"))
+		ss.mtmb.Kill(ErrOperationTimeout)
 		err = ss.mtmb.Err()
 	}
 	return
@@ -164,7 +169,7 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 			case <-toret.mtmb.Dying():
 				return nil
 			case <-time.After(time.Minute * 5):
-				return io.ErrClosedPipe
+				return ErrWatchdogTimeout
 			case <-kikr:
 			}
 		}

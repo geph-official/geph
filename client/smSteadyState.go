@@ -30,7 +30,8 @@ func (cmd *Command) smSteadyState() {
 	go cmd.doSocks(socksListener)
 	defer socksListener.Close()
 	// wait until death
-	cmd.currTunn.Tomb().Wait()
+	reason := cmd.currTunn.Tomb().Wait()
+	log.Println("network failed in steady state:", reason.Error())
 	// clear everything and go to ConnEntry
 	cmd.currTunn = nil
 	cmd.smState = cmd.smConnEntry

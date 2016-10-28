@@ -3,6 +3,7 @@ package binder
 import (
 	"encoding/base32"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -18,6 +19,12 @@ func (cmd *Command) handAccountSummary(w http.ResponseWriter, r *http.Request) {
 	// populate from json
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		log.Println("handAccountSummary:", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if len(req.PrivKey) != natrium.ECDHKeyLength {
+		log.Println("handAccountSummary: given ECDH key malformed")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -35,6 +42,7 @@ func (cmd *Command) handAccountSummary(w http.ResponseWriter, r *http.Request) {
 	// query the database now
 	tx, err := cmd.pgdb.Begin()
 	if err != nil {
+		log.Println("handAccountSummary:", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -45,6 +53,7 @@ func (cmd *Command) handAccountSummary(w http.ResponseWriter, r *http.Request) {
 		WHERE AccInfo.Uid = AccBalances.Uid
 		AND AccInfo.Uid = $1`, uid).Scan(&resp.Username, &regdate, &resp.Balance)
 	if err != nil {
+		log.Println("handAccountSummary:", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

@@ -23,6 +23,9 @@ import (
 
 	// SQLite3
 	_ "github.com/mattn/go-sqlite3"
+
+	// pprof
+	_ "net/http/pprof"
 )
 
 const cFRONT = "a0.awsstatic.com"
@@ -34,11 +37,11 @@ func init() {
 	binderPub, _ = natrium.HexDecode("d25bcdc91961a6e9e6c74fbcd5eb977c18e7b1fe63a78ec62378b55aa5172654")
 }
 
-var myHTTP = &http.Client{
+var insecHTTP = &http.Client{
 	Transport: &http.Transport{
 		TLSHandshakeTimeout: time.Second * 10,
 		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
-		DisableKeepAlives:   true,
+		IdleConnTimeout:     time.Second * 10,
 	},
 	Timeout: time.Second * 10,
 }
@@ -111,7 +114,7 @@ func (cmd *Command) Execute(_ context.Context,
 			}
 			return dler.Dial(n, d)
 		},
-		MaxIdleConns: 0,
+		IdleConnTimeout: time.Second * 10,
 	}
 	// touid
 	touid := func(b []byte) string {

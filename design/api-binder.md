@@ -53,7 +53,7 @@ The response contains a summary of information about an account:
 
     {
         "Username": username,
-        "RegDate": date of registration (YYYY-MM-DD),
+        "RegDate": date of registration (RFC3339),
         "Balance": MiB remaining in account
     }
 

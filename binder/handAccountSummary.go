@@ -63,6 +63,7 @@ func (cmd *Command) handAccountSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tx.Commit()
+	resp.RegDate = regdate.Format(time.RFC3339)
 	// write back response
 	j, _ := json.MarshalIndent(&resp, "", "  ")
 	w.Write(j)

@@ -25,7 +25,7 @@ func (cmd *Command) smQueryExits() {
 			fmt.Sprintf("https://%v/exits/%v:8081/get-nodes", cFRONT, ext), nil)
 		req.Host = cHOST
 		var resp *http.Response
-		resp, err = myHTTP.Do(req)
+		resp, err = insecHTTP.Do(req)
 		if err != nil {
 			log.Println(err.Error())
 			continue

@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
-
-	"golang.org/x/net/proxy"
 )
 
 type dnsCacheEntry struct {
@@ -121,10 +119,6 @@ func (cmd *Command) doDNSCache() {
 }
 
 func (cmd *Command) doDNS() {
-	dler, err := proxy.SOCKS5("tcp", "localhost:8781", nil, proxy.Direct)
-	if err != nil {
-		panic(err.Error())
-	}
 	lsner, err := net.Listen("tcp", "127.0.0.1:8753")
 	if err != nil {
 		panic(err.Error())
@@ -138,7 +132,7 @@ func (cmd *Command) doDNS() {
 			}
 			go func() {
 				defer clnt.Close()
-				rmt, err := dler.Dial("tcp", "8.8.8.8:53")
+				rmt, err := cmd.dialTun("8.8.8.8:53")
 				if err != nil {
 					log.Println("failed to tunnel to DNS server:", err.Error())
 					return

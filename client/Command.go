@@ -20,7 +20,6 @@ import (
 	"github.com/bunsim/goproxy"
 	"github.com/google/subcommands"
 	"golang.org/x/net/context"
-	"golang.org/x/net/proxy"
 
 	// SQLite3
 	_ "github.com/mattn/go-sqlite3"
@@ -66,7 +65,8 @@ type Command struct {
 	entryCache map[string][]entryInfo
 	currTunn   *niaucchi.Substrate
 
-	proxtrans *http.Transport
+	proxtrans  *http.Transport
+	proxclient *http.Client
 
 	stats struct {
 		status  string
@@ -111,13 +111,13 @@ func (cmd *Command) Execute(_ context.Context,
 	// set up proxtrans
 	cmd.proxtrans = &http.Transport{
 		Dial: func(n, d string) (net.Conn, error) {
-			dler, err := proxy.SOCKS5("tcp", "localhost:8781", nil, proxy.Direct)
-			if err != nil {
-				panic(err.Error())
-			}
-			return dler.Dial(n, d)
+			return cmd.dialTun(d)
 		},
 		IdleConnTimeout: time.Second * 10,
+	}
+	cmd.proxclient = &http.Client{
+		Transport: cmd.proxtrans,
+		Timeout:   time.Second * 10,
 	}
 	// touid
 	touid := func(b []byte) string {

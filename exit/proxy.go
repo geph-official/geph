@@ -16,11 +16,14 @@ import (
 	"gopkg.in/bunsim/natrium.v1"
 )
 
+// TODO refactor this function, it's getting too messy
 func (cmd *Command) doProxy() {
 	lsnr, err := niaucchi.Listen(nil, cmd.identity.ToECDH(), ":2378")
 	if err != nil {
 		panic(err.Error())
 	}
+	// lock on all the lists
+	var lslok sync.RWMutex
 	// blacklist of local networks
 	var cidrBlacklist []*net.IPNet
 	for _, s := range []string{
@@ -32,7 +35,46 @@ func (cmd *Command) doProxy() {
 		_, n, _ := net.ParseCIDR(s)
 		cidrBlacklist = append(cidrBlacklist, n)
 	}
-
+	// whitelist of free networks
+	freeWhitelist := map[string]bool{
+		"binder.geph.io:443": true,
+		"dl.geph.io:443":     true,
+		"8.8.8.8:53":         true,
+	}
+	// we also periodically update the whitelist by resolving the names
+	go func() {
+		for {
+			lslok.Lock()
+			var nlst []string
+			for v := range freeWhitelist {
+				addr, err := net.ResolveTCPAddr("tcp", string(v))
+				if err != nil {
+					continue
+				}
+				nlst = append(nlst, addr.String())
+			}
+			for _, v := range nlst {
+				freeWhitelist[v] = true
+			}
+			lslok.Unlock()
+		}
+	}()
+	// convenience functions
+	isBlack := func(addr *net.TCPAddr) bool {
+		lslok.RLock()
+		defer lslok.RUnlock()
+		for _, n := range cidrBlacklist {
+			if n.Contains(addr.IP) {
+				return true
+			}
+		}
+		return false
+	}
+	isWhite := func(addr string) bool {
+		lslok.RLock()
+		defer lslok.RUnlock()
+		return freeWhitelist[addr]
+	}
 	log.Println("niaucchi listening on port 2378")
 	for {
 		ss, err := lsnr.AcceptSubstrate()
@@ -53,9 +95,9 @@ func (cmd *Command) doProxy() {
 			bal, err := cmd.decAccBalance(uid, 0)
 			if err != nil {
 				log.Println("error authenticating user", uid, ":", err)
-				return
+			} else {
+				log.Println(uid, "connected with", bal, "MiB left")
 			}
-			log.Println(uid, "connected with", bal, "MiB left")
 			// little balance
 			lbal := 0
 			var lblk sync.Mutex
@@ -67,10 +109,9 @@ func (cmd *Command) doProxy() {
 				if lbal <= 0 {
 					bal, err := cmd.decAccBalance(uid, 1)
 					if err != nil || bal == 0 {
-						ss.Tomb().Kill(io.ErrClosedPipe)
 						return false
 					}
-					lbal += 1024 * 1024
+					lbal += 1000 * 1000
 				}
 				return true
 			}
@@ -92,17 +133,18 @@ func (cmd *Command) doProxy() {
 					if err != nil {
 						return
 					}
+					// we check if the
 					// resolve and connect
 					addr, err := net.ResolveTCPAddr("tcp", string(addrbts))
 					if err != nil {
 						return
 					}
 					// block connections to things in the CIDR blacklist
-					for _, n := range cidrBlacklist {
-						if n.Contains(addr.IP) {
-							return
-						}
+					if isBlack(addr) {
+						return
 					}
+					// is this connection free?
+					isfree := isWhite(string(addrbts))
 					// go ahead and connect
 					rmt, err := net.DialTimeout("tcp", addr.String(), time.Second*5)
 					if err != nil {
@@ -119,7 +161,7 @@ func (cmd *Command) doProxy() {
 							if err != nil {
 								return
 							}
-							if !consume(n) {
+							if !consume(n) && !isfree {
 								return
 							}
 							limit.WaitN(ctx, n)
@@ -135,7 +177,7 @@ func (cmd *Command) doProxy() {
 						if err != nil {
 							return
 						}
-						if !consume(n) {
+						if !consume(n) && !isfree {
 							return
 						}
 						limit.WaitN(ctx, n)

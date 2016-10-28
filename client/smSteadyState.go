@@ -37,6 +37,21 @@ func (cmd *Command) smSteadyState() {
 	cmd.smState = cmd.smConnEntry
 }
 
+func (cmd *Command) dialTun(dest string) (conn net.Conn, err error) {
+	var myss *niaucchi.Substrate
+	myss = cmd.currTunn
+	if myss == nil {
+		return
+	}
+	conn, err = myss.OpenConn()
+	if err != nil {
+		return
+	}
+	conn.Write([]byte{byte(len(dest))})
+	conn.Write([]byte(dest))
+	return
+}
+
 func (cmd *Command) doSocks(lsnr net.Listener) {
 	for {
 		clnt, err := lsnr.Accept()
@@ -45,23 +60,15 @@ func (cmd *Command) doSocks(lsnr net.Listener) {
 		}
 		go func() {
 			defer clnt.Close()
-			var myss *niaucchi.Substrate
-			myss = cmd.currTunn
-			if myss == nil {
-				return
-			}
 			dest, err := tinysocks.ReadRequest(clnt)
 			if err != nil {
 				return
 			}
-			conn, err := myss.OpenConn()
+			conn, err := cmd.dialTun(dest)
 			if err != nil {
 				return
 			}
-			defer conn.Close()
 			tinysocks.CompleteRequest(0x00, clnt)
-			conn.Write([]byte{byte(len(dest))})
-			conn.Write([]byte(dest))
 			// forward
 			log.Println("tunnel open", dest)
 			cmd.stats.Lock()

@@ -46,3 +46,5 @@ The endpoint is `GET /accinfo` and the thing looks like:
         "Balance": remaining account balance, in MiB
         (more fields in the future)
     }
+
+Calling this endpoint causes the daemon to pull the latest data from the network, so it should not be called very frequently.

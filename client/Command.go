@@ -1,7 +1,6 @@
 package client
 
 import (
-	"crypto/tls"
 	"database/sql"
 	"encoding/base32"
 	"encoding/json"
@@ -37,10 +36,9 @@ func init() {
 	binderPub, _ = natrium.HexDecode("d25bcdc91961a6e9e6c74fbcd5eb977c18e7b1fe63a78ec62378b55aa5172654")
 }
 
-var insecHTTP = &http.Client{
+var cleanHTTP = &http.Client{
 	Transport: &http.Transport{
 		TLSHandshakeTimeout: time.Second * 10,
-		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
 		IdleConnTimeout:     time.Second * 10,
 	},
 	Timeout: time.Second * 10,
@@ -87,6 +85,13 @@ type Command struct {
 	smState func()
 }
 
+func touid(b []byte) string {
+	uid := strings.ToLower(
+		base32.StdEncoding.EncodeToString(
+			natrium.SecureHash(b, nil)[:10]))
+	return uid
+}
+
 // Name returns the name "client".
 func (*Command) Name() string { return "client" }
 
@@ -118,13 +123,6 @@ func (cmd *Command) Execute(_ context.Context,
 	cmd.proxclient = &http.Client{
 		Transport: cmd.proxtrans,
 		Timeout:   time.Second * 10,
-	}
-	// touid
-	touid := func(b []byte) string {
-		uid := strings.ToLower(
-			base32.StdEncoding.EncodeToString(
-				natrium.SecureHash(b, nil)[:10]))
-		return uid
 	}
 	// try to connect to the cache first
 	if cmd.cachedir != "" {
@@ -178,6 +176,7 @@ func (cmd *Command) Execute(_ context.Context,
 	// spawn the RPC servers
 	go func() {
 		http.HandleFunc("/summary", cmd.servSummary)
+		http.HandleFunc("/accinfo", cmd.servAccInfo)
 		http.HandleFunc("/netinfo", cmd.servNetinfo)
 		err := http.ListenAndServe("127.0.0.1:8790", nil)
 		if err != nil {

@@ -34,7 +34,7 @@ func (cmd *Command) getExitNodes() (nds map[string][]byte, err error) {
 	// request the data
 	req, _ := http.NewRequest("GET", fmt.Sprintf("https://%v/exit-info", cFRONT), nil)
 	req.Host = cHOST
-	resp, err := insecHTTP.Do(req)
+	resp, err := cleanHTTP.Do(req)
 	if err != nil {
 		return
 	}

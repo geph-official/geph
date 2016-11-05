@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -139,6 +140,12 @@ func (cmd *Command) Execute(_ context.Context,
 		Transport: cmd.proxtrans,
 		Timeout:   time.Second * 10,
 	}
+	// spawn the SOCKS5 server
+	socksListener, err := net.Listen("tcp", "127.0.0.1:8781")
+	if err != nil {
+		panic(err.Error())
+	}
+	go cmd.doSocks(socksListener)
 	// try to connect to the cache first
 	if cmd.cachedir != "" {
 		var err error
@@ -184,6 +191,7 @@ func (cmd *Command) Execute(_ context.Context,
 	// spawn the HTTP proxy server
 	srv := goproxy.NewProxyHttpServer()
 	srv.Tr = cmd.proxtrans
+	srv.Logger = log.New(ioutil.Discard, "", 0)
 	go func() {
 		err := http.ListenAndServe("127.0.0.1:8780", srv)
 		if err != nil {

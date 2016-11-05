@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 
+	"golang.org/x/net/proxy"
+
 	"github.com/ProjectNiwl/tinysocks"
 	"github.com/bunsim/geph/niaucchi"
 )
@@ -23,13 +25,6 @@ func (cmd *Command) smSteadyState() {
 		cmd.stats.status = "connecting"
 		cmd.stats.Unlock()
 	}()
-	// spawn the SOCKS5 server
-	socksListener, err := net.Listen("tcp", "127.0.0.1:8781")
-	if err != nil {
-		panic(err.Error())
-	}
-	go cmd.doSocks(socksListener)
-	defer socksListener.Close()
 	// wait until death
 	reason := cmd.currTunn.Tomb().Wait()
 	log.Println("network failed in steady state:", reason.Error())
@@ -39,6 +34,14 @@ func (cmd *Command) smSteadyState() {
 }
 
 func (cmd *Command) dialTun(dest string) (conn net.Conn, err error) {
+	sks, err := proxy.SOCKS5("tcp", "127.0.0.1:8781", nil, proxy.FromEnvironment())
+	if err != nil {
+		return
+	}
+	return sks.Dial("tcp", dest)
+}
+
+func (cmd *Command) dialTunRaw(dest string) (conn net.Conn, err error) {
 	var myss *niaucchi.Substrate
 	myss = cmd.currTunn
 	if myss == nil {
@@ -66,7 +69,7 @@ func (cmd *Command) doSocks(lsnr net.Listener) {
 			if err != nil {
 				return
 			}
-			conn, err := cmd.dialTun(dest)
+			conn, err := cmd.dialTunRaw(dest)
 			if err != nil {
 				return
 			}

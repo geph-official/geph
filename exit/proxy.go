@@ -5,6 +5,7 @@ import (
 	"encoding/base32"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"strings"
 	"sync"
@@ -107,11 +108,13 @@ func (cmd *Command) doProxy() {
 				defer lblk.Unlock()
 				lbal -= dec
 				if lbal <= 0 {
-					bal, err := cmd.decAccBalance(uid, 1)
+					// take between 1 and 10 MiB randomly to prevent consistent delays
+					num := rand.Int()%9 + 1
+					bal, err := cmd.decAccBalance(uid, num)
 					if err != nil || bal == 0 {
 						return false
 					}
-					lbal += 1000 * 1000
+					lbal += 1000 * 1000 * num
 				}
 				return true
 			}

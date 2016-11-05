@@ -113,6 +113,21 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 func (cmd *Command) Execute(_ context.Context,
 	f *flag.FlagSet,
 	args ...interface{}) subcommands.ExitStatus {
+	// Initialize stats
+	cmd.stats.status = "connecting"
+	cmd.stats.stTime = time.Now()
+	cmd.stats.netinfo.tuns = make(map[string]string)
+	// spawn the RPC servers
+	go func() {
+		http.HandleFunc("/proxy.pac", cmd.servPac)
+		http.HandleFunc("/summary", cmd.servSummary)
+		http.HandleFunc("/accinfo", cmd.servAccInfo)
+		http.HandleFunc("/netinfo", cmd.servNetinfo)
+		err := http.ListenAndServe("127.0.0.1:8790", nil)
+		if err != nil {
+			panic(err.Error())
+		}
+	}()
 	// set up proxtrans
 	cmd.proxtrans = &http.Transport{
 		Dial: func(n, d string) (net.Conn, error) {
@@ -163,26 +178,12 @@ func (cmd *Command) Execute(_ context.Context,
 		j, _ := json.Marshal(cmd.identity)
 		log.Println("identity (cache):", string(j))
 	}
-	// Initialize stats
-	cmd.stats.status = "connecting"
-	cmd.stats.stTime = time.Now()
-	cmd.stats.netinfo.tuns = make(map[string]string)
 	// Start the DNS daemon which should never stop
 	go cmd.doDNS()
 	// Start the HTTP which should never stop
 	// spawn the HTTP proxy server
 	srv := goproxy.NewProxyHttpServer()
 	srv.Tr = cmd.proxtrans
-	// spawn the RPC servers
-	go func() {
-		http.HandleFunc("/summary", cmd.servSummary)
-		http.HandleFunc("/accinfo", cmd.servAccInfo)
-		http.HandleFunc("/netinfo", cmd.servNetinfo)
-		err := http.ListenAndServe("127.0.0.1:8790", nil)
-		if err != nil {
-			panic(err.Error())
-		}
-	}()
 	go func() {
 		err := http.ListenAndServe("127.0.0.1:8780", srv)
 		if err != nil {

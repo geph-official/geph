@@ -64,6 +64,11 @@ type Command struct {
 	entryCache map[string][]entryInfo
 	currTunn   *niaucchi.Substrate
 
+	geosql   *sql.DB
+	whitegeo []string
+	wliststr string
+	geodbloc string
+
 	proxtrans  *http.Transport
 	proxclient *http.Client
 
@@ -107,7 +112,12 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.uname, "uname", "test", "username")
 	f.StringVar(&cmd.pwd, "pwd", "removekebab", "password")
 	f.StringVar(&cmd.cachedir, "cachedir", "", "cache directory; if empty then no cache is used")
-	f.BoolVar(&cmd.powersave, "powersave", false, "optimize for saving power on mobile devices, at the cost of some performance")
+	f.BoolVar(&cmd.powersave, "powersave", false,
+		"optimize for saving power on mobile devices, at the cost of some performance")
+
+	f.StringVar(&cmd.wliststr, "whitelist", "", "comma-separated countries to not proxy (example: \"CN,US\")")
+	f.StringVar(&cmd.geodbloc, "geodb", "",
+		"location of GeoIP database; must be given if countries are to be whitelisted")
 }
 
 // Execute executes a client subcommand.
@@ -118,6 +128,15 @@ func (cmd *Command) Execute(_ context.Context,
 	cmd.stats.status = "connecting"
 	cmd.stats.stTime = time.Now()
 	cmd.stats.netinfo.tuns = make(map[string]string)
+	// Initialize GeoIP
+	if cmd.geodbloc != "" {
+		var err error
+		cmd.whitegeo = strings.Split(cmd.wliststr, ",")
+		cmd.geosql, err = sql.Open("sqlite3", cmd.geodbloc)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
 	// spawn the RPC servers
 	go func() {
 		http.HandleFunc("/proxy.pac", cmd.servPac)

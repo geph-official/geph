@@ -42,6 +42,9 @@ func (cmd *Command) dialTun(dest string) (conn net.Conn, err error) {
 }
 
 func (cmd *Command) dialTunRaw(dest string) (conn net.Conn, err error) {
+	if !cmd.filterDest(dest) {
+		return net.Dial("tcp", dest)
+	}
 	var myss *niaucchi.Substrate
 	myss = cmd.currTunn
 	if myss == nil {
@@ -75,11 +78,9 @@ func (cmd *Command) doSocks(lsnr net.Listener) {
 			}
 			tinysocks.CompleteRequest(0x00, clnt)
 			// forward
-			log.Println("tunnel open", dest)
 			cmd.stats.Lock()
 			cmd.stats.netinfo.tuns[clnt.RemoteAddr().String()] = dest
 			cmd.stats.Unlock()
-			defer log.Println("tunnel clos", dest)
 			defer func() {
 				cmd.stats.Lock()
 				delete(cmd.stats.netinfo.tuns, clnt.RemoteAddr().String())

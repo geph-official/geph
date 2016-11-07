@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/time/rate"
 
+	"github.com/bunsim/geph/common"
 	"github.com/bunsim/geph/niaucchi"
 	"gopkg.in/bunsim/natrium.v1"
 )
@@ -144,6 +145,10 @@ func (cmd *Command) doProxy() {
 					}
 					// block connections to things in the CIDR blacklist
 					if isBlack(addr) {
+						return
+					}
+					// block connections to forbidden ports
+					if !common.AllowedPorts[addr.Port] {
 						return
 					}
 					// is this connection free?

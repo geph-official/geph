@@ -35,15 +35,10 @@ func (cmd *Command) servNetinfo(w http.ResponseWriter, r *http.Request) {
 		Protocol    string
 		ActiveTunns map[string]string
 	}
-	eip, err := cmd.resolveName(cmd.stats.netinfo.exit)
 	cmd.stats.RLock()
 	defer cmd.stats.RUnlock()
 	csn := cmd.stats.netinfo
-	if err == nil {
-		resp.Exit = eip
-	} else {
-		resp.Exit = "FAIL"
-	}
+	resp.Exit = cmd.stats.netinfo.exit
 	resp.Entry = csn.entry
 	resp.Protocol = csn.prot
 	resp.ActiveTunns = csn.tuns
@@ -60,8 +55,9 @@ func (cmd *Command) servAccInfo(w http.ResponseWriter, r *http.Request) {
 	bts, _ := json.Marshal(&req)
 	resp, err := cmd.proxclient.Post("https://binder.geph.io/account-summary",
 		"application/json", bytes.NewReader(bts))
-	// If the network is borked, go back to ConnEntry
+	// If the network is borked, just die
 	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
 	// See if the status is 200
@@ -74,6 +70,7 @@ func (cmd *Command) servAccInfo(w http.ResponseWriter, r *http.Request) {
 		}
 		err = json.NewDecoder(resp.Body).Decode(&lol)
 		if err != nil {
+			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
 		var resp struct {
@@ -87,6 +84,7 @@ func (cmd *Command) servAccInfo(w http.ResponseWriter, r *http.Request) {
 		bts, _ := json.MarshalIndent(&resp, "", "    ")
 		w.Write(bts)
 	} else {
+		w.WriteHeader(resp.StatusCode)
 		return
 	}
 }

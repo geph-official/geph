@@ -35,6 +35,28 @@ All URLs like `https://binder.geph.io/exits/noram.exits.geph.io/...` serve as re
 
 Security is provided by signatures at the exits, as detailed in the document about them.
 
+### Obtaining a captcha
+
+The method is `POST /fresh-captcha`. (POST prevents middleboxes like the CDN from caching). The response is:
+
+    {
+        "CaptchaID": some base64 string,
+        "CaptchaImg": base64-encoded PNG image
+    }
+
+### Registering an account
+
+The method is `POST /register-account`. The request looks like this:
+
+    {
+        "Username": desired username,
+        "PubKey": public key,
+        "CaptchaID": id of solved captcha,
+        "CaptchaSoln": solution for captcha
+    }
+
+In the response, `200` means a successful registration, `400` means malformed username, `409` means the username already exists, and `403` in case the captcha is wrong.
+
 ## Methods only allowed with end-to-end encryption
 
 ### General info about an account

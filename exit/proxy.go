@@ -59,6 +59,7 @@ func (cmd *Command) doProxy() {
 				freeWhitelist[v] = true
 			}
 			lslok.Unlock()
+			time.Sleep(time.Minute)
 		}
 	}()
 	// convenience functions

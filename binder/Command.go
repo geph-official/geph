@@ -65,6 +65,9 @@ func (cmd *Command) Execute(_ context.Context,
 	// run the stuff
 	http.HandleFunc("/exit-info", cmd.handExitInfo)
 	http.HandleFunc("/account-summary", cmd.handAccountSummary)
+	http.HandleFunc("/example-captcha", cmd.handExampleCaptcha)
+	http.HandleFunc("/fresh-captcha", cmd.handFreshCaptcha)
+	http.HandleFunc("/register-account", cmd.handRegisterAccount)
 	rp := &httputil.ReverseProxy{
 		Director: func(r *http.Request) {
 			frags := strings.Split(r.URL.Path, "/")

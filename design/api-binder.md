@@ -55,7 +55,7 @@ The method is `POST /register-account`. The request looks like this:
         "CaptchaSoln": solution for captcha
     }
 
-In the response, `200` means a successful registration, `400` means malformed username, `409` means the username already exists, and `403` in case the captcha is wrong.
+In the response, `200` means a successful registration, `400` means malformed request (badly formatted JSON, badly formatted username, etc), `409` means the username already exists, and `403` in case the captcha is wrong.
 
 ## Methods only allowed with end-to-end encryption
 

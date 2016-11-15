@@ -8,10 +8,11 @@ import (
 	"strings"
 	"time"
 
-	natrium "gopkg.in/bunsim/natrium.v1"
+	"gopkg.in/bunsim/natrium.v1"
 )
 
 func (cmd *Command) handAccountSummary(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("content-type", "application/json")
 	var req struct {
 		PrivKey []byte
 	}

@@ -11,6 +11,7 @@ import (
 )
 
 func (cmd *Command) handExitInfo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("content-type", "application/json")
 	// JSON thingy
 	var towrite struct {
 		Expires string
@@ -43,10 +44,7 @@ func (cmd *Command) handExitInfo(w http.ResponseWriter, r *http.Request) {
 		log.Println("handExitInfo: exit configuration is going to expire soon:", towrite.Expires)
 	}
 	// Now we reserialize and sign
-	bts, err := json.Marshal(&towrite)
-	if err != nil {
-		panic(err.Error())
-	}
+	bts, _ := json.MarshalIndent(&towrite, "", "  ")
 	sig := cmd.identity.Sign(bts)
 	w.Header().Add("X-Geph-Signature", natrium.HexEncode(sig))
 	w.Write(bts)

@@ -11,6 +11,7 @@ import (
 	"github.com/bunsim/geph/client"
 	"github.com/bunsim/geph/entry"
 	"github.com/bunsim/geph/exit"
+	"github.com/bunsim/geph/proxbinder"
 	"github.com/google/subcommands"
 	"gopkg.in/bunsim/natrium.v1"
 )
@@ -25,6 +26,7 @@ func main() {
 	subcommands.Register(&exit.Command{}, "")
 	subcommands.Register(&entry.Command{}, "")
 	subcommands.Register(&client.Command{}, "")
+	subcommands.Register(&proxbinder.Command{}, "")
 	flag.Parse()
 	ctx := context.Background()
 	os.Exit(int(subcommands.Execute(ctx)))

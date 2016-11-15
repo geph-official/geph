@@ -3,7 +3,6 @@ package client
 import (
 	"database/sql"
 	"encoding/base32"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -204,8 +203,6 @@ func (cmd *Command) Execute(_ context.Context,
 			}
 		}
 		log.Println("identity (deriv):", touid(cmd.identity.PublicKey()))
-		j, _ := json.Marshal(cmd.identity)
-		log.Println("identity (cache):", string(j))
 	}
 	// Start the DNS daemon which should never stop
 	go cmd.doDNS()

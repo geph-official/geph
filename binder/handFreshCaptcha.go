@@ -10,6 +10,7 @@ import (
 
 func (cmd *Command) handExampleCaptcha(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("content-type", "image/png")
+	w.Header().Add("cache-control", "no-cache")
 	id := captcha.NewLen(6)
 	w.Header().Add("x-captcha-id", id)
 	captcha.WriteImage(w, id, 200, 100)
@@ -17,6 +18,7 @@ func (cmd *Command) handExampleCaptcha(w http.ResponseWriter, r *http.Request) {
 
 func (cmd *Command) handFreshCaptcha(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("content-type", "application/json")
+	w.Header().Add("cache-control", "no-cache")
 	var resp struct {
 		CaptchaID  string
 		CaptchaImg []byte

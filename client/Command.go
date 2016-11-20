@@ -16,10 +16,11 @@ import (
 
 	"gopkg.in/bunsim/natrium.v1"
 
+	"context"
+
 	"github.com/bunsim/geph/niaucchi"
 	"github.com/bunsim/goproxy"
 	"github.com/google/subcommands"
-	"golang.org/x/net/context"
 
 	// SQLite3
 	_ "github.com/mattn/go-sqlite3"

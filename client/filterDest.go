@@ -32,7 +32,8 @@ func (cmd *Command) filterDest(addr string) bool {
 	// split host and port
 	host, portstr, err := net.SplitHostPort(addr)
 	if !strings.Contains(host, ".") ||
-		cLanRxp.MatchString(host) {
+		cLanRxp.MatchString(host) ||
+		host == "binder.geph.io" {
 		log.Println("DENYING", addr, "due to host pattern")
 		// local or internal address
 		return false

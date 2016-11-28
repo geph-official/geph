@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"log"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -11,6 +12,8 @@ import (
 )
 
 const cGoogleDNS = "8.8.8.8:53"
+
+var cLanRxp = regexp.MustCompile("\\.(lan|local)$")
 
 // filterDest takes in an address of the form "host:port" and return true iff it should
 // go through the proxy
@@ -29,8 +32,7 @@ func (cmd *Command) filterDest(addr string) bool {
 	// split host and port
 	host, portstr, err := net.SplitHostPort(addr)
 	if !strings.Contains(host, ".") ||
-		strings.Contains(host, ".lan") ||
-		strings.Contains(host, ".local") {
+		cLanRxp.MatchString(host) {
 		log.Println("DENYING", addr, "due to host pattern")
 		// local or internal address
 		return false

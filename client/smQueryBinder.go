@@ -21,6 +21,7 @@ func (cmd *Command) smQueryBinder() {
 	defer log.Println("** <= QueryBinder **")
 	nds, err := cmd.getExitNodes()
 	if err != nil {
+		log.Println("QueryBinder:", err.Error())
 		cmd.smState = cmd.smQueryBinder
 		time.Sleep(time.Second)
 		return

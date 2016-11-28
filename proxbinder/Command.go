@@ -9,8 +9,9 @@ import (
 	"net/http/httputil"
 	"time"
 
+	"context"
+
 	"github.com/google/subcommands"
-	"golang.org/x/net/context"
 )
 
 // Command is the proxbinder subcommand.

@@ -8,8 +8,9 @@ import (
 	"log"
 	"net/http"
 
+	"context"
+
 	"github.com/google/subcommands"
-	"golang.org/x/net/context"
 	"gopkg.in/bunsim/natrium.v1"
 
 	// postgres

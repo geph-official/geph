@@ -42,6 +42,8 @@ func (cmd *Command) handExitInfo(w http.ResponseWriter, r *http.Request) {
 			for _, ex := range towrite.Blacklist[cntry] {
 				delete(towrite.Exits, ex)
 			}
+		} else {
+			log.Println("handExitInfo: unexpected error", err.Error())
 		}
 	}
 	// Now we reserialize and sign

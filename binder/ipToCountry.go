@@ -26,8 +26,10 @@ func ipToCountry(ip string) (reg string, err error) {
 		err = errors.New("non-OK status")
 		return
 	}
-	jsxp := make(map[string]string)
+	var jsxp struct {
+		CountryCode string `json:"country_code"`
+	}
 	err = json.NewDecoder(resp.Body).Decode(&jsxp)
-	reg = jsxp["country_code"]
+	reg = jsxp.CountryCode
 	return
 }

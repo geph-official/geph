@@ -120,6 +120,7 @@ func (ss *Substrate) OpenConn() (cn net.Conn, err error) {
 		}
 	}
 	tmb := new(tomb.Tomb)
+	log.Println("niaucchi: opening", connid)
 	down := ss.regCallback(connid)
 	ss.cblok.Unlock()
 	tosend := segment{
@@ -211,6 +212,16 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 					default:
 					}
 				}
+				// regardless of the above, we do this
+				if lol.Flag == flOpen || lol.Flag == flFastOpen {
+					select {
+					case toret.opch <- lol:
+					default:
+						log.Println("niaucchi: overfull accept buffer!")
+						return ErrProtocolFail
+					}
+					continue
+				}
 				toret.cblok.Lock()
 				f, ok := toret.cbtab[lol.ConnID]
 				toret.cblok.Unlock()
@@ -225,21 +236,11 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 					f = toret.regCallback(lol.ConnID)
 					toret.cblok.Unlock()
 				}
-				// regardless of the above, we do this
-				if lol.Flag == flOpen || lol.Flag == flFastOpen {
-					select {
-					case toret.opch <- lol:
-					default:
-						log.Println("niaucchi: overfull accept buffer!")
-						return ErrProtocolFail
-					}
-				} else {
-					select {
-					case f <- lol:
-					default:
-						log.Println("niaucchi: overfull read buffer!")
-						return ErrProtocolFail
-					}
+				select {
+				case f <- lol:
+				default:
+					log.Println("niaucchi: overfull read buffer!")
+					return ErrProtocolFail
 				}
 			}
 		})

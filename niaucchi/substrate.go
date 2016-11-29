@@ -227,7 +227,7 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 				toret.cblok.Unlock()
 				// if the thing doesn't exist yet, create it
 				if !ok {
-					if lol.Flag == flClos {
+					if lol.Flag != flData {
 						// just ignore
 						continue
 					}

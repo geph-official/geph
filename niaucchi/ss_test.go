@@ -26,11 +26,14 @@ func TestLol(t *testing.T) {
 			go func() {
 				defer ss.Tomb().Kill(io.ErrClosedPipe)
 				for {
-					clnt, err := ss.AcceptConn()
+					clnt, _, err := ss.AcceptConn()
 					if err != nil {
 						panic(err.Error())
 					}
-					io.Copy(clnt, clnt)
+					go func() {
+						defer clnt.Close()
+						io.Copy(clnt, clnt)
+					}()
 				}
 			}()
 		}

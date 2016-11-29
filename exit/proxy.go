@@ -121,7 +121,7 @@ func (cmd *Command) doProxy() {
 				return true
 			}
 			for {
-				clnt, err := ss.AcceptConn()
+				clnt, _, err := ss.AcceptConn()
 				if err != nil {
 					return
 				}

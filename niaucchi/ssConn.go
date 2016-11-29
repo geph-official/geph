@@ -28,14 +28,15 @@ type ssConn struct {
 
 // Write writes from a buffer.
 func (sc *ssConn) Write(p []byte) (n int, err error) {
-	if len(p) > 32*1024 {
+	maxKbs := 32
+	if len(p) > maxKbs*1024 {
 		var fn int
-		fn, err = sc.realWrite(p[:1024])
+		fn, err = sc.realWrite(p[:maxKbs*1024])
 		if err != nil {
 			return
 		}
 		var rn int
-		rn, err = sc.Write(p[1024:])
+		rn, err = sc.Write(p[maxKbs*1024:])
 		if err != nil {
 			return
 		}

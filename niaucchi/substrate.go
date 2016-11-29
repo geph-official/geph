@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/lunixbochs/struc"
@@ -30,25 +31,35 @@ type Substrate struct {
 	opch chan segment
 	mtmb *tomb.Tomb
 
-	cbtab map[uint16]func(segment)
+	cbtab map[uint16]chan segment
 	cblok sync.Mutex
 
 	transport []net.Conn
+
+	queuebts uint32
 }
 
-func (ss *Substrate) regCallback(connid uint16, cback func(segment)) bool {
+func (ss *Substrate) incQueueBts(siz int) {
+	atomic.AddUint32(&ss.queuebts, uint32(siz))
+}
+
+func (ss *Substrate) decQueueBts(siz int) {
+	atomic.AddUint32(&ss.queuebts, ^uint32(siz-1))
+}
+
+func (ss *Substrate) regCallback(connid uint16) chan segment {
 	if ss.cbtab[connid] != nil {
-		return false
+		return ss.cbtab[connid]
 	}
-	ss.cbtab[connid] = cback
-	return true
+	ch := make(chan segment, 256)
+	ss.cbtab[connid] = ch
+	return ch
 }
 
 func (ss *Substrate) delCallback(connid uint16) {
 	if ss.cbtab[connid] != nil {
 		delete(ss.cbtab, connid)
 	}
-	return
 }
 
 // RemotePK gets their PK.
@@ -62,7 +73,7 @@ func (ss *Substrate) Tomb() *tomb.Tomb {
 }
 
 // AcceptConn accepts a new tunneled connection over the substrate.
-func (ss *Substrate) AcceptConn() (cn net.Conn, err error) {
+func (ss *Substrate) AcceptConn() (cn net.Conn, data []byte, err error) {
 	var msg segment
 	select {
 	case <-ss.mtmb.Dying():
@@ -70,27 +81,28 @@ func (ss *Substrate) AcceptConn() (cn net.Conn, err error) {
 		return
 	case msg = <-ss.opch:
 	}
-	// register a callback
-	down := make(chan segment, 128)
+	// get the callback
 	tmb := new(tomb.Tomb)
 	ss.cblok.Lock()
-	ss.regCallback(msg.ConnID, func(s segment) {
-		select {
-		case down <- s:
-		case <-tmb.Dying():
-		}
-	})
+	down := ss.regCallback(msg.ConnID)
 	ss.cblok.Unlock()
-	// we now ack the opening
-	ack := segment{
-		Flag:   flAck,
-		ConnID: msg.ConnID,
-	}
-	select {
-	case ss.upch <- ack:
-	case <-ss.mtmb.Dying():
-		err = ss.mtmb.Err()
-		return
+	// we now ack the opening if it's a legacy Open
+	if msg.Flag == flOpen {
+		log.Println("niaucchi: legacy OPEN (must ack) received on", msg.ConnID)
+		ack := segment{
+			Flag:   flAck,
+			ConnID: msg.ConnID,
+		}
+		select {
+		case ss.upch <- ack:
+		case <-ss.mtmb.Dying():
+			err = ss.mtmb.Err()
+			return
+		}
+	} else {
+		// it's a FastOpen, copy the additional data
+		log.Println("niaucchi: FASTOPEN received on", msg.ConnID)
+		data = msg.Body
 	}
 	// create the context
 	cn = newSsConn(tmb, ss, down, msg.ConnID)
@@ -107,17 +119,11 @@ func (ss *Substrate) OpenConn() (cn net.Conn, err error) {
 			break
 		}
 	}
-	down := make(chan segment, 1)
 	tmb := new(tomb.Tomb)
-	ss.regCallback(connid, func(s segment) {
-		select {
-		case down <- s:
-		case <-tmb.Dying():
-		}
-	})
+	down := ss.regCallback(connid)
 	ss.cblok.Unlock()
 	tosend := segment{
-		Flag:   flOpen,
+		Flag:   flFastOpen,
 		ConnID: connid,
 	}
 	select {
@@ -130,7 +136,7 @@ func (ss *Substrate) OpenConn() (cn net.Conn, err error) {
 		err = ss.mtmb.Err()
 		return
 	}
-	select {
+	/*select {
 	case seg := <-down:
 		if seg.Flag != flAck {
 			log.Println("niaucchi: app data before ack for open, requeuing")
@@ -147,7 +153,8 @@ func (ss *Substrate) OpenConn() (cn net.Conn, err error) {
 	case <-time.After(time.Second * 15):
 		ss.mtmb.Kill(ErrOperationTimeout)
 		err = ss.mtmb.Err()
-	}
+	}*/
+	cn = newSsConn(tmb, ss, down, connid)
 	return
 }
 
@@ -157,7 +164,7 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 		upch:      make(chan segment),
 		opch:      make(chan segment, 256),
 		mtmb:      new(tomb.Tomb),
-		cbtab:     make(map[uint16]func(segment)),
+		cbtab:     make(map[uint16]chan segment),
 		transport: transport,
 	}
 
@@ -207,16 +214,30 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 				toret.cblok.Lock()
 				f, ok := toret.cbtab[lol.ConnID]
 				toret.cblok.Unlock()
+				// if the thing doesn't exist yet, create it
 				if !ok {
-
-				} else {
-					f(lol)
+					if lol.Flag == flClos {
+						// just ignore
+						continue
+					}
+					log.Println("niaucchi: IMPLICITLY opening", lol.ConnID)
+					toret.cblok.Lock()
+					f = toret.regCallback(lol.ConnID)
+					toret.cblok.Unlock()
 				}
-				if lol.Flag == flOpen {
+				// regardless of the above, we do this
+				if lol.Flag == flOpen || lol.Flag == flFastOpen {
 					select {
 					case toret.opch <- lol:
 					default:
 						log.Println("niaucchi: overfull accept buffer!")
+						return ErrProtocolFail
+					}
+				} else {
+					select {
+					case f <- lol:
+					default:
+						log.Println("niaucchi: overfull read buffer!")
 						return ErrProtocolFail
 					}
 				}

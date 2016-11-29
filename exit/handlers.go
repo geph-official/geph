@@ -51,9 +51,9 @@ func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 	rmadr := taddr.IP.String()
 	if rmadr == binderips[0] {
 		rmadr = strings.Split(r.Header.Get("X-Forwarded-For"), ",")[0]
-		//log.Println("IP of client in get-nodes:", rmadr, "(forwarded)")
+		log.Println("IP of client in get-nodes:", rmadr, "(forwarded)")
 	} else {
-		//log.Println("IP of client in get-nodes:", rmadr)
+		log.Println("IP of client in get-nodes:", rmadr)
 	}
 
 	tosend.Expires = time.Now().Add(time.Hour).Format(time.RFC3339)

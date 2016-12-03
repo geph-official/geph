@@ -35,7 +35,7 @@ func (*Command) Usage() string {
 func (cmd *Command) SetFlags(f *flag.FlagSet) {
 }
 
-const cFRONT = "a0.awsstatic.com"
+const cFRONT = "cloudfront.debian.net"
 const cHOST = "dtnins2n354c4.cloudfront.net"
 
 // Execute executes a binder subcommand.

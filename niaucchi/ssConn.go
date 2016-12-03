@@ -22,6 +22,7 @@ type ssConn struct {
 	sendbar chan struct{} // flow control barrier; new flData segments
 	sendctr uint64
 	sendlok sync.Mutex
+	sendded bool
 
 	tmb *tomb.Tomb
 }
@@ -51,6 +52,10 @@ func (sc *ssConn) Write(p []byte) (n int, err error) {
 func (sc *ssConn) realWrite(p []byte) (n int, err error) {
 	sc.sendlok.Lock()
 	defer sc.sendlok.Unlock()
+	if sc.sendded {
+		err = io.ErrClosedPipe
+		return
+	}
 	pcp := make([]byte, len(p))
 	copy(pcp, p)
 	tosend := segment{
@@ -92,6 +97,7 @@ func (sc *ssConn) Close() (err error) {
 	case <-sc.daddy.mtmb.Dying():
 		return
 	}
+	sc.sendded = true
 	go func() {
 		time.Sleep(time.Second * 2)
 		sc.tmb.Kill(io.ErrClosedPipe)

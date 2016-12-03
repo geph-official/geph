@@ -63,7 +63,7 @@ func (cmd *Command) smConnEntry() {
 	case ss := <-retline:
 		close(dedline)
 		cmd.currTunn = ss
-		cmd.smState = cmd.smVerifyAccount
+		cmd.smState = cmd.smSteadyState
 		return
 	}
 }

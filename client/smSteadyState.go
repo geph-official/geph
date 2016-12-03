@@ -25,6 +25,8 @@ func (cmd *Command) smSteadyState() {
 		cmd.stats.status = "connecting"
 		cmd.stats.Unlock()
 	}()
+	// do the account verification in parallel, tied to currTunn's tomb
+	cmd.currTunn.Tomb().Go(cmd.verifyAccount)
 	// wait until death
 	reason := cmd.currTunn.Tomb().Wait()
 	log.Println("network failed in steady state:", reason.Error())
@@ -55,8 +57,7 @@ func (cmd *Command) dialTunRaw(dest string) (conn net.Conn, err error) {
 	if err != nil {
 		return
 	}
-	conn.Write([]byte{byte(len(dest))})
-	conn.Write([]byte(dest))
+	conn.Write(append([]byte{byte(len(dest))}, []byte(dest)...))
 	return
 }
 

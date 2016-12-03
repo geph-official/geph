@@ -9,7 +9,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -125,8 +124,6 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 func (cmd *Command) Execute(_ context.Context,
 	f *flag.FlagSet,
 	args ...interface{}) subcommands.ExitStatus {
-	// GOMAXPROCS to prevent thrashing if a serious bug occurs
-	runtime.GOMAXPROCS(1)
 	// Initialize stats
 	cmd.stats.status = "connecting"
 	cmd.stats.stTime = time.Now()

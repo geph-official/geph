@@ -8,12 +8,9 @@ import (
 	"os"
 )
 
-// smVerifyAccount is the VerifyAccount state where the account info is verified.
-// => SteadyState if the account info is okay
-// => BadAuth if the account info is not okay
-func (cmd *Command) smVerifyAccount() {
-	log.Println("** => VerifyAccount **")
-	defer log.Println("** <= VerifyAccount **")
+// verifyAccount should be run during the SteadyState state to check that the account info is
+// okay. It kills the program if it is not okay, and returns an error only when the network fails.
+func (cmd *Command) verifyAccount() (err error) {
 	// We check by calling the account-summary interface over the tunnel
 	var req struct {
 		PrivKey []byte
@@ -25,9 +22,9 @@ func (cmd *Command) smVerifyAccount() {
 	// If the network is borked, go back to ConnEntry
 	if err != nil {
 		log.Println("account verification failed since network is bad:", err.Error())
-		cmd.smState = cmd.smConnEntry
 		return
 	}
+	log.Println("binder thing sent away")
 	// See if the status is 200
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {
@@ -40,9 +37,9 @@ func (cmd *Command) smVerifyAccount() {
 		if err == nil {
 			log.Println("account verified: balance =", lol.Balance, "MB")
 		}
-		cmd.smState = cmd.smSteadyState
 	} else {
 		log.Println("** FATAL: account info is wrong! **")
 		os.Exit(403)
 	}
+	return
 }

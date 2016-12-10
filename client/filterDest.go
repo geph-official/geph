@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/binary"
 	"log"
 	"net"
 	"regexp"
@@ -54,7 +53,7 @@ func (cmd *Command) filterDest(addr string) bool {
 	// if it's already an IP, don't bother
 	ip := net.ParseIP(host)
 	if len(ip) == 0 {
-		if cmd.geosql == nil && addr != cGoogleDNS {
+		if cmd.geodbloc == "" && addr != cGoogleDNS {
 			log.Println("ACCEPTING", addr)
 			return true
 		}
@@ -75,18 +74,8 @@ func (cmd *Command) filterDest(addr string) bool {
 		}
 	}
 	// check the country
-	if cmd.geosql != nil {
-		var ctry string
-		ipint := int(binary.BigEndian.Uint32(ip[12:]))
-		err = cmd.geosql.QueryRow(
-			"SELECT ctry FROM iptocountry WHERE idx = $1 AND start <= $2 AND $2 <= end",
-			ipint-(ipint%16777216),
-			ipint,
-		).Scan(&ctry)
-		if err != nil {
-			log.Println("ACCEPTING", addr, ip.String(), "to be safe, but:", err.Error())
-			return true
-		}
+	if cmd.geodbloc != "" {
+		ctry := cmd.geodb.GetCountry(ip)
 		for _, v := range cmd.whitegeo {
 			if ctry == v {
 				log.Println("DENYING", addr, ip.String(), ctry, "due to country")

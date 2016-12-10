@@ -64,7 +64,7 @@ type Command struct {
 	entryCache map[string][]entryInfo
 	currTunn   *niaucchi.Substrate
 
-	geosql   *sql.DB
+	geodb    geoDB
 	whitegeo []string
 	wliststr string
 	geodbloc string
@@ -132,7 +132,7 @@ func (cmd *Command) Execute(_ context.Context,
 	if cmd.geodbloc != "" {
 		var err error
 		cmd.whitegeo = strings.Split(cmd.wliststr, ",")
-		cmd.geosql, err = sql.Open("sqlite3", cmd.geodbloc)
+		err = cmd.geodb.LoadCSV(cmd.geodbloc)
 		if err != nil {
 			panic(err.Error())
 		}

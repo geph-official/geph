@@ -75,6 +75,7 @@ func (cmd *Command) doSocks(lsnr net.Listener) {
 			}
 			conn, err := cmd.dialTunRaw(dest)
 			if err != nil {
+				tinysocks.CompleteRequest(0x03, clnt)
 				return
 			}
 			tinysocks.CompleteRequest(0x00, clnt)

@@ -3,6 +3,7 @@ package niaucchi
 import (
 	"bytes"
 	"io"
+	"log"
 	"net"
 	"sync"
 	"time"
@@ -24,12 +25,36 @@ type ssConn struct {
 	sendlok sync.Mutex
 	sendded bool
 
+	kickdog chan struct{}
+
 	tmb *tomb.Tomb
+}
+
+// Fast watchdog that kills everything if stuck with ACKs outstanding
+func (sc *ssConn) fastDog() error {
+	var dline <-chan time.Time
+	for {
+		select {
+		case <-sc.tmb.Dying():
+			return nil
+		case <-dline:
+			dline = nil
+			if len(sc.sendbar) > 0 {
+				log.Println("niaucchi: fast watchdog", sc.connid, "died and ACKs still left!")
+				sc.daddy.mtmb.Kill(ErrOperationTimeout)
+				return ErrOperationTimeout
+			}
+			log.Println("niaucchi: fast watchdog", sc.connid, "died but it's okay")
+		case <-sc.kickdog:
+			dline = time.After(time.Second * 10)
+			log.Println("niaucchi: fast watchdog", sc.connid, "deadline set")
+		}
+	}
 }
 
 // Write writes from a buffer.
 func (sc *ssConn) Write(p []byte) (n int, err error) {
-	maxKbs := 32
+	maxKbs := 8
 	if len(p) > maxKbs*1024 {
 		var fn int
 		fn, err = sc.realWrite(p[:maxKbs*1024])
@@ -68,6 +93,13 @@ func (sc *ssConn) realWrite(p []byte) (n int, err error) {
 	// send off the tosend
 	select {
 	case sc.daddy.upch <- tosend:
+	case <-sc.tmb.Dying():
+		err = io.ErrClosedPipe
+		return
+	}
+	// kick the dog
+	select {
+	case sc.kickdog <- struct{}{}:
 	case <-sc.tmb.Dying():
 		err = io.ErrClosedPipe
 		return
@@ -187,6 +219,7 @@ func newSsConn(tmb *tomb.Tomb, daddy *Substrate, incoming chan segment, connid u
 		tmb:    tmb,
 
 		sendbar: make(chan struct{}, 64),
+		kickdog: make(chan struct{}),
 	}
 
 	go func() {
@@ -229,6 +262,9 @@ func newSsConn(tmb *tomb.Tomb, daddy *Substrate, incoming chan segment, connid u
 			}
 		}
 	})
+
+	// watchdog
+	tmb.Go(ssc.fastDog)
 
 	return ssc
 }

@@ -28,7 +28,7 @@ import (
 	_ "net/http/pprof"
 )
 
-const cFRONT = "cloudfront.debian.net"
+const cFRONT = "a0.awsstatic.com"
 const cHOST = "dtnins2n354c4.cloudfront.net"
 
 var binderPub natrium.EdDSAPublic
@@ -40,7 +40,7 @@ func init() {
 var cleanHTTP = &http.Client{
 	Transport: &http.Transport{
 		TLSHandshakeTimeout: time.Second * 10,
-		IdleConnTimeout:     time.Second * 10,
+		IdleConnTimeout:     time.Second * 1,
 	},
 	Timeout: time.Second * 10,
 }

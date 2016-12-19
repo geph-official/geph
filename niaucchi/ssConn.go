@@ -3,7 +3,6 @@ package niaucchi
 import (
 	"bytes"
 	"io"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -40,14 +39,14 @@ func (sc *ssConn) fastDog() error {
 		case <-dline:
 			dline = nil
 			if len(sc.sendbar) > 0 {
-				log.Println("niaucchi: fast watchdog", sc.connid, "died and ACKs still left!")
+				//log.Println("niaucchi: fast watchdog", sc.connid, "died and ACKs still left!")
 				sc.daddy.mtmb.Kill(ErrOperationTimeout)
 				return ErrOperationTimeout
 			}
-			log.Println("niaucchi: fast watchdog", sc.connid, "died but it's okay")
+			//log.Println("niaucchi: fast watchdog", sc.connid, "died but it's okay")
 		case <-sc.kickdog:
 			dline = time.After(time.Second * 10)
-			log.Println("niaucchi: fast watchdog", sc.connid, "deadline set")
+			//log.Println("niaucchi: fast watchdog", sc.connid, "deadline set")
 		}
 	}
 }

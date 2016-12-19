@@ -120,7 +120,6 @@ func (ss *Substrate) OpenConn() (cn net.Conn, err error) {
 		}
 	}
 	tmb := new(tomb.Tomb)
-	log.Println("niaucchi: opening", connid)
 	down := ss.regCallback(connid)
 	ss.cblok.Unlock()
 	tosend := segment{

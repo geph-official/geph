@@ -24,11 +24,13 @@ func (cmd *Command) handRegisterAccount(w http.ResponseWriter, r *http.Request) 
 	// read json
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		log.Println("handRegisterAccount:", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	// check for sanity
 	if len(req.PubKey) != natrium.ECDHKeyLength {
+		log.Println("handRegisterAccount: insane PubKey length")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

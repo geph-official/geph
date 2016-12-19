@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"net"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -31,6 +32,7 @@ func (cmd *Command) servSummary(w http.ResponseWriter, r *http.Request) {
 func (cmd *Command) servNetinfo(w http.ResponseWriter, r *http.Request) {
 	var resp struct {
 		Exit        string
+		ExitCountry string
 		Entry       string
 		Protocol    string
 		ActiveTunns map[string]string
@@ -39,6 +41,9 @@ func (cmd *Command) servNetinfo(w http.ResponseWriter, r *http.Request) {
 	defer cmd.stats.RUnlock()
 	csn := cmd.stats.netinfo
 	resp.Exit = cmd.stats.netinfo.exit
+	if cmd.geodbloc != "" {
+		resp.ExitCountry = cmd.geodb.GetCountry(net.ParseIP(resp.Exit))
+	}
 	resp.Entry = csn.entry
 	resp.Protocol = csn.prot
 	resp.ActiveTunns = csn.tuns

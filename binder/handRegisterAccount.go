@@ -39,6 +39,7 @@ func (cmd *Command) handRegisterAccount(w http.ResponseWriter, r *http.Request) 
 			natrium.SecureHash(req.PubKey, nil)[:10]))
 	// check the captcha
 	if !captcha.VerifyString(req.CaptchaID, req.CaptchaSoln) {
+		log.Println("handRegisterAccount:", req.CaptchaSoln, "does not solve", req.CaptchaID)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}

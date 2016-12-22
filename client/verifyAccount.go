@@ -39,7 +39,7 @@ func (cmd *Command) verifyAccount() (err error) {
 		}
 	} else {
 		log.Println("** FATAL: account info is wrong! **")
-		os.Exit(403)
+		os.Exit(43)
 	}
 	return
 }

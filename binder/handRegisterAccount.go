@@ -54,7 +54,7 @@ func (cmd *Command) handRegisterAccount(w http.ResponseWriter, r *http.Request) 
 	tx.Exec("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
 	// does the account already exist?
 	var cnt int
-	err = tx.QueryRow("SELECT COUNT(*) IN AccInfo WHERE Uname = $1 OR Uid = $2",
+	err = tx.QueryRow("SELECT COUNT(*) FROM AccInfo WHERE Uname = $1 OR Uid = $2",
 		req.Username, uid).Scan(cnt)
 	if err != nil {
 		log.Println("handRegisterAccount: failed to query for count", err.Error())

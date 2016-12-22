@@ -53,7 +53,7 @@ func (cmd *Command) Execute(_ context.Context,
 	mux := &http.ServeMux{}
 	srv := &http.Server{
 		Handler:      mux,
-		ReadTimeout:  time.Second,
+		ReadTimeout:  time.Second * 5,
 		WriteTimeout: time.Second * 5,
 	}
 	mux.Handle("/", rp)

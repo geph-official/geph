@@ -55,7 +55,7 @@ func (cmd *Command) handRegisterAccount(w http.ResponseWriter, r *http.Request) 
 	// does the account already exist?
 	var cnt int
 	err = tx.QueryRow("SELECT COUNT(*) FROM AccInfo WHERE Uname = $1 OR Uid = $2",
-		req.Username, uid).Scan(cnt)
+		req.Username, uid).Scan(&cnt)
 	if err != nil {
 		log.Println("handRegisterAccount: failed to query for count", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"io"
+	"log"
 	"net"
 	"os"
 	"strconv"
@@ -32,6 +33,7 @@ func (gdb *geoDB) LoadCSV(fname string) (err error) {
 		rcd, err = rdr.Read()
 		if err != nil {
 			if err == io.EOF {
+				log.Println("geoDB fully read,", len(gdb.slice), "lines")
 				err = nil
 			}
 			return

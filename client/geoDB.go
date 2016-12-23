@@ -34,6 +34,9 @@ func (gdb *geoDB) LoadCSV(fname string) (err error) {
 		if err != nil {
 			if err == io.EOF {
 				log.Println("geoDB fully read,", len(gdb.slice), "lines")
+				for i := 0; i < 50; i++ {
+					log.Println("example:", gdb.slice[i])
+				}
 				err = nil
 			}
 			return
@@ -51,6 +54,7 @@ func (gdb *geoDB) LoadCSV(fname string) (err error) {
 func (gdb *geoDB) GetCountry(ip net.IP) string {
 	// convert IP to integer
 	ipint := uint(binary.BigEndian.Uint32(ip[12:]))
+	log.Println("ipint of", ip, "is", ipint)
 	// binary search
 	sl := gdb.slice
 	lo := 0

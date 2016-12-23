@@ -14,7 +14,6 @@ import (
 )
 
 func (cmd *Command) handRegisterAccount(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("content-type", "application/json")
 	var req struct {
 		Username    string
 		PubKey      []byte
@@ -88,5 +87,6 @@ func (cmd *Command) handRegisterAccount(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	w.Write([]byte("Okay!"))
 	return
 }

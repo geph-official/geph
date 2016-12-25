@@ -17,6 +17,7 @@ import (
 
 	"context"
 
+	"github.com/bunsim/geph/common"
 	"github.com/bunsim/geph/niaucchi"
 	"github.com/bunsim/goproxy"
 	"github.com/google/subcommands"
@@ -190,9 +191,7 @@ func (cmd *Command) Execute(_ context.Context,
 	}
 	// Derive the identity
 	if cmd.identity == nil {
-		prek := natrium.SecureHash([]byte(cmd.pwd), []byte(cmd.uname))
-		cmd.identity = natrium.EdDSADeriveKey(
-			natrium.StretchKey(prek, make([]byte, natrium.PasswordSaltLen), 8, 64*1024*1024)).ToECDH()
+		cmd.identity = common.DeriveKey(cmd.uname, cmd.pwd).ToECDH()
 		// Place identity in cache if available
 		if cmd.cdb != nil {
 			_, err := cmd.cdb.Exec("INSERT INTO main VALUES ('sec.identity', $1)", []byte(cmd.identity))

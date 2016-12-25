@@ -6,16 +6,16 @@ import (
 	"net/http"
 	"strings"
 
-	natrium "gopkg.in/bunsim/natrium.v1"
+	"github.com/bunsim/geph/common"
+
+	"gopkg.in/bunsim/natrium.v1"
 )
 
 func (cmd *Command) handDeriveKeys(w http.ResponseWriter, r *http.Request) {
 	uname := r.URL.Query().Get("uname")
 	pwd := r.URL.Query().Get("pwd")
-	prek := natrium.SecureHash([]byte(pwd), []byte(uname))
 
-	SK := natrium.EdDSADeriveKey(
-		natrium.StretchKey(prek, make([]byte, natrium.PasswordSaltLen), 8, 64*1024*1024)).ToECDH()
+	SK := common.DeriveKey(uname, pwd).ToECDH()
 	PK := SK.PublicKey()
 	UID := strings.ToLower(
 		base32.StdEncoding.EncodeToString(

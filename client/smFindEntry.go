@@ -3,6 +3,7 @@ package client
 import (
 	"encoding/json"
 	"log"
+	"time"
 )
 
 // smFindEntry is the FindEntry state.
@@ -16,7 +17,11 @@ func (cmd *Command) smFindEntry() {
 		var bts []byte
 		err := cmd.cdb.QueryRow("SELECT v FROM main WHERE k='bst.entries'").Scan(&bts)
 		if err == nil {
-			json.Unmarshal(bts, &cmd.entryCache)
+			var expunix int64
+			err = cmd.cdb.QueryRow("SELECT v FROM main WHERE k='bst.expires'").Scan(&expunix)
+			if err == nil && time.Unix(expunix, 0).After(time.Now()) {
+				json.Unmarshal(bts, &cmd.entryCache)
+			}
 		}
 	}
 
@@ -30,6 +35,9 @@ func (cmd *Command) smFindEntry() {
 				panic(err.Error())
 			}
 			cmd.cdb.Exec("INSERT OR REPLACE INTO main VALUES('bst.entries', $1)", bts)
+			// max of 24 hours
+			cmd.cdb.Exec("INSERT OR REPLACE INTO main VALUES('bst.expires', $1)",
+				time.Now().Add(time.Hour*24).Unix())
 		}
 		cmd.smState = cmd.smConnEntry
 	}

@@ -97,7 +97,6 @@ func (cmd *Command) Execute(_ context.Context,
 			log.Println("WARNING: expire time before now, ignoring")
 			continue
 		}
-		log.Println("TODO: not checking sigs for exit info yet!")
 		// we then see if our choice is in the given exits
 		_, ok := exinf.Exits[choice]
 		if !ok {

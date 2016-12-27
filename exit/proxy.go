@@ -190,7 +190,6 @@ func (cmd *Command) doProxy() {
 						if !consume(n) && !isfree {
 							// if we are over the limit, apply fascist limit
 							harshlimit.WaitN(ctx, n)
-							return
 						}
 						limit.WaitN(ctx, n)
 						_, err = rmt.Write(buf[:n])

@@ -1,0 +1,22 @@
+digraph G {
+  node [shape=box]
+
+  FindEntry [peripheries=2]
+  FindEntry -> QueryBinder [label="stale"]
+  FindEntry -> ConnEntry [label="fresh"]
+
+  QueryBinder -> QueryExits
+  QueryBinder -> QueryBinder [style=dashed]
+  QueryExits -> FindEntry
+  QueryExits -> QueryBinder [style=dashed]
+
+  ConnEntry -> VerifyAccount
+  ConnEntry -> ClearCache [style=dashed]
+  ClearCache -> FindEntry
+
+  VerifyAccount -> SteadyState
+  VerifyAccount -> BadAuth [style=dashed label="auth"]
+  VerifyAccount -> ConnEntry [style=dashed label="net"]
+
+  SteadyState -> ConnEntry [style=dashed]
+}

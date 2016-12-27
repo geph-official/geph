@@ -2,11 +2,10 @@ package exit
 
 import (
 	"log"
+	"math/rand"
 	"net"
 	"sync"
 	"time"
-
-	"github.com/ProjectNiwl/natrium"
 )
 
 type entryDB struct {
@@ -26,7 +25,7 @@ func newEntryDB() *entryDB {
 			var toDelete []string
 			toret.lok.RLock()
 			for addr, expire := range toret.expireTab {
-				if expire.After(time.Now()) {
+				if expire.Before(time.Now()) {
 					toDelete = append(toDelete, addr)
 				}
 			}
@@ -43,7 +42,7 @@ func newEntryDB() *entryDB {
 }
 
 func (edb *entryDB) AddNode(addr string, cookie []byte) error {
-	wire, err := net.Dial("tcp", addr)
+	wire, err := net.DialTimeout("tcp", addr, time.Second*5)
 	if err != nil {
 		return err
 	}
@@ -59,24 +58,22 @@ func (edb *entryDB) AddNode(addr string, cookie []byte) error {
 func (edb *entryDB) GetNodes(seed uint64) (nodes map[string][]byte) {
 	edb.lok.RLock()
 	defer edb.lok.RUnlock()
-	if seed != 0 {
-		panic("GetNodes doesn't actually support a seed yet")
-	}
-	log.Println("FIXME: GetNodes does not use the seed")
+	// seed an insecure RNG; the insecurity of the RNG shouldn't be an issue
+	badrng := rand.New(rand.NewSource(int64(seed)))
 	var allnodes []string
 	for k := range edb.cookieTab {
 		allnodes = append(allnodes, k)
 	}
 	// now we shuffle
 	for i := 0; i < len(allnodes)-1; i++ {
-		j := int(natrium.RandUint32LT(uint32(len(allnodes)-i))) + i
+		j := badrng.Int()%(len(allnodes)-i) + i
 		tmp := allnodes[j]
 		allnodes[j] = allnodes[i]
 		allnodes[i] = tmp
 	}
-	// take first 5 at most
+	// take first 3 at most
 	nodes = make(map[string][]byte)
-	for i := 0; i < 5 && i < len(allnodes); i++ {
+	for i := 0; i < 3 && i < len(allnodes); i++ {
 		nodes[allnodes[i]] = edb.cookieTab[allnodes[i]]
 	}
 	return

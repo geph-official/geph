@@ -1,7 +1,12 @@
 {
-    "Expires": "2016-12-01T00:00:00Z",
+    "Expires": "",
     "Exits":
     {
-        "emea.exits.geph.ch": "AAAA"
+        "159.100.249.227": "hF3ScDC33f0cfXyzARFCsN9M2vTb9l2dWh0H9D7w69c=",
+        "139.162.74.47": "+V9MNGGH+1/Ggtqed9UfBGoIlc7d+cYxW+54kWWyiW4="
+    },
+    "Blacklist":
+    {
+        "CN": ["159.100.249.227"]
     }
 }

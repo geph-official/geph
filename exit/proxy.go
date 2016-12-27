@@ -5,7 +5,6 @@ import (
 	"encoding/base32"
 	"io"
 	"log"
-	"math/rand"
 	"net"
 	"strings"
 	"sync"
@@ -93,6 +92,7 @@ func (cmd *Command) doProxy() {
 					natrium.SecureHash(pub, nil)[:10]))
 			// per-substrate rate limit
 			limit := rate.NewLimiter(rate.Limit(cmd.bwLimit*1024), 512*1024)
+			harshlimit := rate.NewLimiter(rate.Limit(32*1024), 128*1024)
 			ctx := context.Background()
 			// check balance first
 			bal, err := cmd.decAccBalance(uid, 0)
@@ -110,8 +110,7 @@ func (cmd *Command) doProxy() {
 				defer lblk.Unlock()
 				lbal -= dec
 				if lbal <= 0 {
-					// take between 1 and 10 MiB randomly to prevent consistent delays
-					num := rand.Int()%9 + 1
+					num := 1
 					bal, err := cmd.decAccBalance(uid, num)
 					if err != nil || bal == 0 {
 						return false
@@ -171,9 +170,11 @@ func (cmd *Command) doProxy() {
 								return
 							}
 							if !consume(n) && !isfree {
-								return
+								// if we are over the limit, apply fascist limit
+								harshlimit.WaitN(ctx, n)
+							} else {
+								limit.WaitN(ctx, n)
 							}
-							limit.WaitN(ctx, n)
 							_, err = clnt.Write(buf[:n])
 							if err != nil {
 								return

@@ -88,7 +88,7 @@ func (ss *Substrate) AcceptConn() (cn net.Conn, data []byte, err error) {
 	ss.cblok.Unlock()
 	// we now ack the opening if it's a legacy Open
 	if msg.Flag == flOpen {
-		log.Println("niaucchi: legacy OPEN (must ack) received on", msg.ConnID)
+		//log.Println("niaucchi: legacy OPEN (must ack) received on", msg.ConnID)
 		ack := segment{
 			Flag:   flAck,
 			ConnID: msg.ConnID,
@@ -101,7 +101,7 @@ func (ss *Substrate) AcceptConn() (cn net.Conn, data []byte, err error) {
 		}
 	} else {
 		// it's a FastOpen, copy the additional data
-		log.Println("niaucchi: FASTOPEN received on", msg.ConnID)
+		//log.Println("niaucchi: FASTOPEN received on", msg.ConnID)
 		data = msg.Body
 	}
 	// create the context
@@ -230,7 +230,7 @@ func NewSubstrate(transport []net.Conn) *Substrate {
 						// just ignore
 						continue
 					}
-					log.Println("niaucchi: IMPLICITLY opening", lol.ConnID)
+					//log.Println("niaucchi: IMPLICITLY opening", lol.ConnID)
 					toret.cblok.Lock()
 					f = toret.regCallback(lol.ConnID)
 					toret.cblok.Unlock()

@@ -5,6 +5,7 @@ import (
 	"encoding/base32"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"strings"
 	"sync"
@@ -110,7 +111,7 @@ func (cmd *Command) doProxy() {
 				defer lblk.Unlock()
 				lbal -= dec
 				if lbal <= 0 {
-					num := 1
+					num := rand.Int()%20 + 5
 					bal, err := cmd.decAccBalance(uid, num)
 					if err != nil || bal == 0 {
 						return false
@@ -119,6 +120,8 @@ func (cmd *Command) doProxy() {
 				}
 				return true
 			}
+			// at the very end, return the small balance
+			defer cmd.decAccBalance(uid, -lbal)
 			for {
 				clnt, _, err := ss.AcceptConn()
 				if err != nil {

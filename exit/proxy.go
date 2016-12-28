@@ -122,7 +122,7 @@ func (cmd *Command) doProxy() {
 			}
 			// at the very end, return the small balance
 			defer func() {
-				cmd.decAccBalance(uid, -lbal)
+				cmd.decAccBalance(uid, -lbal/1000)
 			}()
 			for {
 				clnt, _, err := ss.AcceptConn()

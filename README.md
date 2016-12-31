@@ -10,6 +10,6 @@ However, to prevent confusion, **all bug reports should be reported on this repo
 
 這裏是迷霧通核心守護進程`geph`的官方原始碼。各平台上的客戶端都包含這個跨平台程式，所有的翻牆「黑科技」都在這個版本庫中。
 
-桌面客戶端界面的原始碼位於 https://github.com/bunsim/geph-electron。Android版客戶端的原始碼並不在GitHub上，請到 https://dl.geph.io/android-sources/ 下載。
+桌面客戶端界面的原始碼位於 https://github.com/bunsim/geph-electron 。Android版客戶端的原始碼並不在GitHub上，請到 https://dl.geph.io/android-sources/ 下載。
 
 不過爲了避免混淆， **請將所有的問題報告放到這裏**，即便是針對某個平台的問題。

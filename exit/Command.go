@@ -72,6 +72,7 @@ func (cmd *Command) Execute(_ context.Context,
 
 	// run the proxy
 	go cmd.doProxyLegacy()
+	go cmd.doProxy()
 
 	// run the exit API
 	http.HandleFunc("/update-node", cmd.handUpdateNode)

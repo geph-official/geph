@@ -67,6 +67,7 @@ func (cmd *Command) doProxy() {
 	if err != nil {
 		panic(err.Error())
 	}
+	log.Println("niaucchi2 listening on port 2379")
 	// Table of active contexts
 	ctxTab := make(map[string]*niaucchi2.Context)
 	var ctxTabLok sync.Mutex
@@ -76,6 +77,7 @@ func (cmd *Command) doProxy() {
 			panic(err.Error())
 		}
 		go func() {
+			log.Println("accepted 2379")
 			// Handle MiniSS first
 			mwire, err := miniss.Handshake(wire, cmd.identity.ToECDH())
 			if err != nil {
@@ -86,12 +88,14 @@ func (cmd *Command) doProxy() {
 			uid := strings.ToLower(
 				base32.StdEncoding.EncodeToString(
 					natrium.SecureHash(pub, nil)[:10]))
+			log.Println("miniss finished")
 			// Ignore the first 33 bytes
 			_, err = io.ReadFull(mwire, make([]byte, 33))
 			if err != nil {
 				mwire.Close()
 				return
 			}
+			log.Println("ignored first 33 bytes")
 			// Next 33 bytes: 0x02, then ctxId
 			buf := make([]byte, 33)
 			_, err = io.ReadFull(mwire, buf)
@@ -104,6 +108,7 @@ func (cmd *Command) doProxy() {
 				return
 			}
 			ctkey := natrium.HexEncode(buf[1:])
+			log.Println("ctkey =", ctkey)
 			// Check the ctxTab now
 			ctxTabLok.Lock()
 			if ctxTab[ctkey] == nil {
@@ -116,6 +121,8 @@ func (cmd *Command) doProxy() {
 					defer ctxTabLok.Unlock()
 					delete(ctxTab, ctkey)
 				}()
+			} else {
+				ctxTab[ctkey].Absorb(mwire)
 			}
 			ctxTabLok.Unlock()
 		}()

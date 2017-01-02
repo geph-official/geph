@@ -55,7 +55,7 @@ func (cmd *Command) smConnEntry() {
 					return
 				}
 				// 33 empty bytes
-				mconn.Write(make([]byte, 32))
+				mconn.Write(make([]byte, 33))
 				// 0x02
 				mconn.Write([]byte{0x02})
 				// ctxid

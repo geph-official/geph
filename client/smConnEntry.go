@@ -48,14 +48,14 @@ func (cmd *Command) smConnEntry() {
 					rawconn.Close()
 					return
 				}
+				// 0x00 for a negotiable protocol
+				oconn.Write([]byte{0x00})
 				mconn, err := miniss.Handshake(oconn, cmd.identity)
 				if err != nil {
 					log.Println("miniss to", xaxa.Addr, err.Error())
 					oconn.Close()
 					return
 				}
-				// 33 empty bytes
-				mconn.Write(make([]byte, 33))
 				// 0x02
 				mconn.Write([]byte{0x02})
 				// ctxid

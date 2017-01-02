@@ -89,13 +89,6 @@ func (cmd *Command) doProxy() {
 				base32.StdEncoding.EncodeToString(
 					natrium.SecureHash(pub, nil)[:10]))
 			log.Println("miniss finished")
-			// Ignore the first 33 bytes
-			_, err = io.ReadFull(mwire, make([]byte, 33))
-			if err != nil {
-				mwire.Close()
-				return
-			}
-			log.Println("ignored first 33 bytes")
 			// Next 33 bytes: 0x02, then ctxId
 			buf := make([]byte, 33)
 			_, err = io.ReadFull(mwire, buf)

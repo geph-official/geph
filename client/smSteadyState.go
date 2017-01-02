@@ -2,13 +2,14 @@ package client
 
 import (
 	"errors"
+	"io"
 	"log"
 	"net"
 
 	"golang.org/x/net/proxy"
 
 	"github.com/ProjectNiwl/tinysocks"
-	"github.com/bunsim/geph/niaucchi"
+	"github.com/bunsim/geph/niaucchi2"
 )
 
 // smSteadyState represents the steady state of the client.
@@ -43,17 +44,17 @@ func (cmd *Command) dialTun(dest string) (conn net.Conn, err error) {
 	return sks.Dial("tcp", dest)
 }
 
-func (cmd *Command) dialTunRaw(dest string) (conn net.Conn, err error) {
+func (cmd *Command) dialTunRaw(dest string) (conn io.ReadWriteCloser, err error) {
 	if !cmd.filterDest(dest) {
 		return net.Dial("tcp", dest)
 	}
-	var myss *niaucchi.Substrate
+	var myss *niaucchi2.Context
 	myss = cmd.currTunn
 	if myss == nil {
 		err = errors.New("null")
 		return
 	}
-	conn, err = myss.OpenConn()
+	conn, err = myss.Tunnel()
 	if err != nil {
 		return
 	}

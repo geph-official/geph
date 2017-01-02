@@ -3,11 +3,14 @@ package client
 import (
 	"io"
 	"log"
+	"net"
 	"time"
 
 	"gopkg.in/bunsim/natrium.v1"
 
-	"github.com/bunsim/geph/niaucchi"
+	"github.com/bunsim/cluttershirt"
+	"github.com/bunsim/geph/niaucchi2"
+	"github.com/bunsim/miniss"
 )
 
 // smConnEntry is the ConnEntry state, where a connection to some entry node is established.
@@ -21,8 +24,10 @@ func (cmd *Command) smConnEntry() {
 	if cmd.powersave {
 		FANOUT = 1
 	}
+	// TODO make this do something
+	func(interface{}) {}(FANOUT)
 
-	retline := make(chan *niaucchi.Substrate)
+	retline := make(chan *niaucchi2.Context)
 	dedline := make(chan bool)
 	for exit, entries := range cmd.entryCache {
 		for _, xaxa := range entries {
@@ -30,12 +35,28 @@ func (cmd *Command) smConnEntry() {
 			xaxa := xaxa
 			log.Println(xaxa.Addr, "from", exit)
 			go func() {
-				cand, merr := niaucchi.DialSubstrate(xaxa.Cookie,
-					cmd.identity,
-					xaxa.ExitKey.ToECDH(),
-					xaxa.Addr, FANOUT)
-				if merr != nil {
-					log.Println(xaxa.Addr, "failed right away:", merr)
+				rawconn, err := net.DialTimeout("tcp", xaxa.Addr, time.Second*10)
+				if err != nil {
+					log.Println("dial to", xaxa.Addr, err.Error())
+					return
+				}
+				oconn, err := cluttershirt.Client(xaxa.Cookie, rawconn)
+				if err != nil {
+					log.Println("cluttershirt to", xaxa.Addr, err.Error())
+					rawconn.Close()
+					return
+				}
+				mconn, err := miniss.Handshake(oconn, cmd.identity)
+				if err != nil {
+					log.Println("miniss to", xaxa.Addr, err.Error())
+					oconn.Close()
+					return
+				}
+				cand := niaucchi2.NewClientCtx()
+				err = cand.Absorb(mconn)
+				if err != nil {
+					log.Println("absorb to", xaxa.Addr, err.Error())
+					mconn.Close()
 					return
 				}
 				select {

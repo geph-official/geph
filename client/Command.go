@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"github.com/bunsim/geph/common"
-	"github.com/bunsim/geph/niaucchi"
+	"github.com/bunsim/geph/niaucchi2"
 	"github.com/bunsim/goproxy"
 	"github.com/google/subcommands"
 
@@ -63,7 +63,7 @@ type Command struct {
 	cdb        *sql.DB
 	exitCache  map[string][]byte
 	entryCache map[string][]entryInfo
-	currTunn   *niaucchi.Substrate
+	currTunn   *niaucchi2.Context
 
 	geodb    geoDB
 	whitegeo []string

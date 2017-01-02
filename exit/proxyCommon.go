@@ -3,6 +3,7 @@ package exit
 import (
 	"context"
 	"io"
+	"log"
 	"net"
 	"time"
 
@@ -47,6 +48,7 @@ func (cmd *Command) proxyCommon(consume func(int) bool, limit, harshlimit *rate.
 	if err != nil {
 		return
 	}
+	log.Println("gonna tun", string(addrbts))
 	// we check if the
 	// resolve and connect
 	addr, err := net.ResolveTCPAddr("tcp", string(addrbts))

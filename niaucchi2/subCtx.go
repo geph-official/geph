@@ -86,6 +86,7 @@ func (sctx *subCtx) mainThread() (err error) {
 		var newseg segment
 		err = struc.Unpack(sctx.wire, &newseg)
 		if err != nil {
+			sctx.parent.death.Kill(err)
 			log.Println("niaucchi2:", sctx.subid, "died due to wire:", err.Error())
 			return
 		}
@@ -102,6 +103,7 @@ func (sctx *subCtx) mainThread() (err error) {
 			if sctx.parent.isClient {
 				log.Println("niaucchi2:", sctx.subid, "got nonsensical OPEN, dying")
 				err = ErrProtocolFail
+				sctx.parent.death.Kill(err)
 				return
 			}
 			// Construct a socket
@@ -126,6 +128,7 @@ func (sctx *subCtx) mainThread() (err error) {
 			default:
 				log.Println("niaucchi2: overfull accept queue! dying")
 				err = ErrProtocolFail
+				sctx.parent.death.Kill(err)
 				return
 			}
 		default:
@@ -137,6 +140,7 @@ func (sctx *subCtx) mainThread() (err error) {
 			if dest == nil {
 				log.Println("niaucchi2: stray", newseg, "on", sctx.subid, ", dying")
 				err = ErrProtocolFail
+				sctx.parent.death.Kill(err)
 				return
 			}
 			if newseg.Flag == flIcwd {
@@ -147,6 +151,7 @@ func (sctx *subCtx) mainThread() (err error) {
 					default:
 						log.Println("niaucchi2: ICWD OVERFLOW", newseg.Sokid, "on", sctx.subid)
 						err = ErrProtocolFail
+						sctx.parent.death.Kill(err)
 						return
 					}
 				}
@@ -156,6 +161,7 @@ func (sctx *subCtx) mainThread() (err error) {
 				default:
 					log.Println("niaucchi2: overfull read buffer in", sctx.subid, ", dying")
 					err = ErrProtocolFail
+					sctx.parent.death.Kill(err)
 					return
 				}
 			}

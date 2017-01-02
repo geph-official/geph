@@ -26,11 +26,16 @@ func (cmd *Command) smSteadyState() {
 		cmd.stats.status = "connecting"
 		cmd.stats.Unlock()
 	}()
-	// do the account verification in parallel, tied to currTunn's tomb
-	cmd.currTunn.Tomb().Go(cmd.verifyAccount)
+	// do the account verification in parallel
+	go cmd.verifyAccount()
 	// wait until death
-	reason := cmd.currTunn.Tomb().Wait()
-	log.Println("network failed in steady state:", reason.Error())
+	<-cmd.currTunn.Tomb().Dying()
+	reason := cmd.currTunn.Tomb().Err()
+	if reason == nil {
+		log.Println("WTF??? Null??")
+	} else {
+		log.Println("network failed in steady state:", reason.Error())
+	}
 	// clear everything and go to ConnEntry
 	cmd.currTunn = nil
 	cmd.smState = cmd.smConnEntry

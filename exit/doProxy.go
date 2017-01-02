@@ -79,6 +79,7 @@ func (cmd *Command) doProxy() {
 		go func() {
 			log.Println("accepted 2379")
 			io.ReadFull(wire, make([]byte, 1))
+			log.Println("read the zero byte")
 			// Handle MiniSS first
 			mwire, err := miniss.Handshake(wire, cmd.identity.ToECDH())
 			if err != nil {

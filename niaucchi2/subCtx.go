@@ -135,7 +135,7 @@ func (sctx *subCtx) mainThread() (err error) {
 			dest = sctx.parent.sokTable[socketID(newseg.Sokid)]
 			sctx.parent.tabLock.RUnlock()
 			if dest == nil {
-				log.Println("niaucchi2: stray", newseg.Flag, "on", sctx.subid, ", dying")
+				log.Println("niaucchi2: stray", newseg, "on", sctx.subid, ", dying")
 				err = ErrProtocolFail
 				return
 			}

@@ -50,16 +50,23 @@ func (cmd *Command) smConnEntry() {
 				}
 				// 0x00 for a negotiable protocol
 				oconn.Write([]byte{0x00})
+				time.Sleep(time.Second * 1)
 				mconn, err := miniss.Handshake(oconn, cmd.identity)
 				if err != nil {
 					log.Println("miniss to", xaxa.Addr, err.Error())
 					oconn.Close()
 					return
 				}
+				log.Println("miniss to", xaxa.Addr, "okay")
 				// 0x02
-				mconn.Write([]byte{0x02})
-				// ctxid
-				mconn.Write(ctxid)
+				_, err = mconn.Write(append([]byte{0x02}, ctxid...))
+				if err != nil {
+					log.Println("ctxid to", xaxa.Addr, err.Error())
+					mconn.Close()
+					return
+				}
+				log.Println("id to", xaxa.Addr, "okay")
+				time.Sleep(time.Second * 5)
 				cand := niaucchi2.NewClientCtx()
 				err = cand.Absorb(mconn)
 				if err != nil {

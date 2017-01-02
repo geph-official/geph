@@ -103,7 +103,7 @@ func (cmd *Command) doProxy() {
 			}
 			ctkey := natrium.HexEncode(buf[1:])
 			log.Println("ctkey =", ctkey)
-			// Check the ctxTab now
+			// Check the ctxTab nowx
 			ctxTabLok.Lock()
 			if ctxTab[ctkey] == nil {
 				ctxTab[ctkey] = niaucchi2.NewServerCtx()

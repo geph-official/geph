@@ -1,14 +1,20 @@
 package niaucchi2
 
 import (
+	"errors"
 	"log"
+	"math/rand"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/lunixbochs/struc"
 
 	"gopkg.in/tomb.v2"
 )
+
+// ErrTimeout indicates a timeout error.
+var ErrTimeout = errors.New("niaucchi2: watchdog timed out")
 
 type subCtx struct {
 	parent   *Context
@@ -16,12 +22,54 @@ type subCtx struct {
 	wire     net.Conn
 	wirewlok sync.Mutex
 
+	wdogkick chan struct{}
+
 	death tomb.Tomb
+}
+
+func (sctx *subCtx) sendAliv() error {
+	var wait int
+	if sctx.parent.isClient {
+		wait = 800
+	} else {
+		wait = 120
+	}
+	for {
+		sctx.wirewlok.Lock()
+		err := struc.Pack(sctx.wire, &segment{Flag: flAliv})
+		sctx.wirewlok.Unlock()
+		if err != nil {
+			return err
+		}
+		//time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * time.Duration(wait+rand.Int()%60))
+	}
+}
+
+func (sctx *subCtx) watchdog() error {
+	go sctx.sendAliv() // This should not block the death
+	var wait time.Duration
+	if sctx.parent.isClient {
+		wait = time.Minute * 4
+	} else {
+		wait = time.Minute * 20
+	}
+	for {
+		select {
+		case <-time.After(wait):
+			log.Println("niaucchi2: watchdog timed out on", sctx.subid)
+			return ErrTimeout
+		case <-sctx.wdogkick:
+		case <-sctx.death.Dying():
+			return sctx.death.Err()
+		}
+	}
 }
 
 func (sctx *subCtx) mainThread() (err error) {
 	// If our parent dies, so do we!
 	sctx.death.Go(func() error {
+		defer sctx.wire.Close()
 		select {
 		case <-sctx.death.Dying():
 			return sctx.death.Err()
@@ -30,6 +78,9 @@ func (sctx *subCtx) mainThread() (err error) {
 		}
 	})
 	defer sctx.wire.Close()
+	// Spin off watchdog
+	sctx.wdogkick = make(chan struct{}, 1)
+	sctx.death.Go(sctx.watchdog)
 	// Main thread only takes care of reading from the wire.
 	for {
 		var newseg segment
@@ -38,7 +89,13 @@ func (sctx *subCtx) mainThread() (err error) {
 			log.Println("niaucchi2:", sctx.subid, "died due to wire:", err.Error())
 			return
 		}
+		select {
+		case sctx.wdogkick <- struct{}{}:
+		default:
+		}
 		switch newseg.Flag {
+		case flAliv:
+			log.Println("niaucchi2: ALIV on", sctx.subid)
 		case flOpen:
 			log.Println("niaucchi2: OPEN", newseg.Sokid, "on", sctx.subid)
 			// We have to be a server
@@ -93,7 +150,6 @@ func (sctx *subCtx) mainThread() (err error) {
 						return
 					}
 				}
-
 			} else {
 				select {
 				case dest.incoming <- newseg:

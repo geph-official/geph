@@ -35,6 +35,11 @@ type Context struct {
 	death tomb.Tomb
 }
 
+// Tomb returns the tomb of the context.
+func (ctx *Context) Tomb() *tomb.Tomb {
+	return &ctx.death
+}
+
 // Accept must be called by only the server.
 func (ctx *Context) Accept() (conn io.ReadWriteCloser, err error) {
 	select {
@@ -112,6 +117,7 @@ func (ctx *Context) Absorb(conn net.Conn) (err error) {
 		bts := make([]byte, 2)
 		_, err = io.ReadFull(conn, bts)
 		if err != nil {
+			ctx.death.Kill(err)
 			return
 		}
 		subid = subCtxID(binary.BigEndian.Uint16(bts))

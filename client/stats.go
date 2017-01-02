@@ -20,6 +20,7 @@ func (cmd *Command) servSummary(w http.ResponseWriter, r *http.Request) {
 	}
 	cmd.stats.RLock()
 	defer cmd.stats.RUnlock()
+	w.Header().Add("Connection", "close")
 	resp.Status = cmd.stats.status
 	resp.Uptime = int(time.Now().Sub(cmd.stats.stTime).Seconds())
 	resp.BytesRX = int(cmd.stats.rxBytes)
@@ -39,6 +40,7 @@ func (cmd *Command) servNetinfo(w http.ResponseWriter, r *http.Request) {
 	}
 	cmd.stats.RLock()
 	defer cmd.stats.RUnlock()
+	w.Header().Add("Connection", "close")
 	csn := cmd.stats.netinfo
 	resp.Exit = cmd.stats.netinfo.exit
 	if cmd.geodbloc != "" {
@@ -53,6 +55,7 @@ func (cmd *Command) servNetinfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cmd *Command) servAccInfo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Connection", "close")
 	var req struct {
 		PrivKey []byte
 	}

@@ -10,11 +10,11 @@ import (
 func TestLol(t *testing.T) {
 	go func() {
 		lsnr, _ := net.Listen("tcp", "127.0.0.1:13371")
+		cont := NewServerCtx()
 		for {
 			zzz, _ := lsnr.Accept()
 			go func() {
 				defer zzz.Close()
-				cont := NewServerCtx()
 				err := cont.Absorb(zzz)
 				if err != nil {
 					panic(err.Error())
@@ -33,14 +33,16 @@ func TestLol(t *testing.T) {
 		}
 	}()
 	time.Sleep(time.Millisecond * 200)
-	wire, err := net.Dial("tcp", "127.0.0.1:13371")
-	if err != nil {
-		panic(err.Error())
-	}
 	cont := NewClientCtx()
-	err = cont.Absorb(wire)
-	if err != nil {
-		panic(err.Error())
+	for i := 0; i < 10; i++ {
+		wire, err := net.Dial("tcp", "127.0.0.1:13371")
+		if err != nil {
+			panic(err.Error())
+		}
+		err = cont.Absorb(wire)
+		if err != nil {
+			panic(err.Error())
+		}
 	}
 	lsnr, _ := net.Listen("tcp", "127.0.0.1:13370")
 	for {

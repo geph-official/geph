@@ -19,7 +19,7 @@ import (
 )
 
 // TODO refactor this function, it's getting too messy
-func (cmd *Command) doProxy() {
+func (cmd *Command) doProxyLegacy() {
 	lsnr, err := niaucchi.Listen(nil, cmd.identity.ToECDH(), ":2378")
 	if err != nil {
 		panic(err.Error())

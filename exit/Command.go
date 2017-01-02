@@ -71,7 +71,7 @@ func (cmd *Command) Execute(_ context.Context,
 	cmd.pgdb = db
 
 	// run the proxy
-	go cmd.doProxy()
+	go cmd.doProxyLegacy()
 
 	// run the exit API
 	http.HandleFunc("/update-node", cmd.handUpdateNode)

@@ -1,19 +1,15 @@
 package exit
 
 import (
-	"context"
 	"encoding/base32"
 	"io"
 	"log"
 	"math/rand"
-	"net"
 	"strings"
 	"sync"
-	"time"
 
 	"golang.org/x/time/rate"
 
-	"github.com/bunsim/geph/common"
 	"github.com/bunsim/geph/niaucchi"
 	"gopkg.in/bunsim/natrium.v1"
 )
@@ -23,60 +19,6 @@ func (cmd *Command) doProxyLegacy() {
 	lsnr, err := niaucchi.Listen(nil, cmd.identity.ToECDH(), ":2378")
 	if err != nil {
 		panic(err.Error())
-	}
-	// lock on all the lists
-	var lslok sync.RWMutex
-	// blacklist of local networks
-	var cidrBlacklist []*net.IPNet
-	for _, s := range []string{
-		"127.0.0.1/8",
-		"10.0.0.0/8",
-		"172.16.0.0/12",
-		"192.168.0.0/16",
-	} {
-		_, n, _ := net.ParseCIDR(s)
-		cidrBlacklist = append(cidrBlacklist, n)
-	}
-	// whitelist of free networks
-	freeWhitelist := map[string]bool{
-		"binder.geph.io:443": true,
-		"dl.geph.io:443":     true,
-		"8.8.8.8:53":         true,
-	}
-	// we also periodically update the whitelist by resolving the names
-	go func() {
-		for {
-			lslok.Lock()
-			var nlst []string
-			for v := range freeWhitelist {
-				addr, err := net.ResolveTCPAddr("tcp", string(v))
-				if err != nil {
-					continue
-				}
-				nlst = append(nlst, addr.String())
-			}
-			for _, v := range nlst {
-				freeWhitelist[v] = true
-			}
-			lslok.Unlock()
-			time.Sleep(time.Minute)
-		}
-	}()
-	// convenience functions
-	isBlack := func(addr *net.TCPAddr) bool {
-		lslok.RLock()
-		defer lslok.RUnlock()
-		for _, n := range cidrBlacklist {
-			if n.Contains(addr.IP) {
-				return true
-			}
-		}
-		return false
-	}
-	isWhite := func(addr string) bool {
-		lslok.RLock()
-		defer lslok.RUnlock()
-		return freeWhitelist[addr]
 	}
 	log.Println("niaucchi listening on port 2378")
 	for {
@@ -91,10 +33,6 @@ func (cmd *Command) doProxyLegacy() {
 			uid := strings.ToLower(
 				base32.StdEncoding.EncodeToString(
 					natrium.SecureHash(pub, nil)[:10]))
-			// per-substrate rate limit
-			limit := rate.NewLimiter(rate.Limit(cmd.bwLimit*1024), 512*1024)
-			harshlimit := rate.NewLimiter(rate.Limit(32*1024), 128*1024)
-			ctx := context.Background()
 			// check balance first
 			bal, err := cmd.decAccBalance(uid, 0)
 			if err != nil {
@@ -102,6 +40,8 @@ func (cmd *Command) doProxyLegacy() {
 			} else {
 				log.Println(uid, "connected with", bal, "MiB left")
 			}
+			limit := rate.NewLimiter(rate.Limit(cmd.bwLimit*1024), 512*1024)
+			harshlimit := rate.NewLimiter(rate.Limit(32*1024), 128*1024)
 			// little balance
 			lbal := 0
 			var lblk sync.Mutex
@@ -111,7 +51,7 @@ func (cmd *Command) doProxyLegacy() {
 				defer lblk.Unlock()
 				lbal -= dec
 				if lbal <= 0 {
-					num := rand.Int()%20 + 5
+					num := rand.Int()%10 + 5
 					bal, err := cmd.decAccBalance(uid, num)
 					if err != nil || bal == 0 {
 						return false
@@ -129,80 +69,7 @@ func (cmd *Command) doProxyLegacy() {
 				if err != nil {
 					return
 				}
-				go func() {
-					defer clnt.Close()
-					// pascal string of the address
-					lb := make([]byte, 1)
-					_, err := io.ReadFull(clnt, lb)
-					if err != nil {
-						return
-					}
-					addrbts := make([]byte, lb[0])
-					_, err = io.ReadFull(clnt, addrbts)
-					if err != nil {
-						return
-					}
-					// we check if the
-					// resolve and connect
-					addr, err := net.ResolveTCPAddr("tcp", string(addrbts))
-					if err != nil {
-						return
-					}
-					// block connections to things in the CIDR blacklist
-					if isBlack(addr) {
-						return
-					}
-					// block connections to forbidden ports
-					if !common.AllowedPorts[addr.Port] {
-						return
-					}
-					// is this connection free?
-					isfree := isWhite(string(addrbts))
-					// go ahead and connect
-					rmt, err := net.DialTimeout("tcp", addr.String(), time.Second*5)
-					if err != nil {
-						return
-					}
-					// forward traffic
-					defer rmt.Close()
-					go func() {
-						defer rmt.Close()
-						defer clnt.Close()
-						buf := make([]byte, 32768)
-						for {
-							n, err := rmt.Read(buf)
-							if err != nil {
-								return
-							}
-							if !consume(n) && !isfree {
-								// if we are over the limit, apply fascist limit
-								harshlimit.WaitN(ctx, n)
-							} else {
-								limit.WaitN(ctx, n)
-							}
-							_, err = clnt.Write(buf[:n])
-							if err != nil {
-								return
-							}
-						}
-					}()
-					buf := make([]byte, 32768)
-					for {
-						n, err := clnt.Read(buf)
-						if err != nil {
-							return
-						}
-						if !consume(n) && !isfree {
-							// if we are over the limit, apply fascist limit
-							harshlimit.WaitN(ctx, n)
-						}
-						limit.WaitN(ctx, n)
-						_, err = rmt.Write(buf[:n])
-						if err != nil {
-							return
-						}
-					}
-				}()
+				go cmd.proxyCommon(consume, limit, harshlimit, uid, clnt)
 			}
 		}()
 	}

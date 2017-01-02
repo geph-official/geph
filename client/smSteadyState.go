@@ -78,6 +78,7 @@ func (cmd *Command) doSocks(lsnr net.Listener) {
 				tinysocks.CompleteRequest(0x03, clnt)
 				return
 			}
+			defer conn.Close()
 			tinysocks.CompleteRequest(0x00, clnt)
 			// forward
 			cmd.stats.Lock()

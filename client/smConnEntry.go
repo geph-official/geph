@@ -35,6 +35,8 @@ func (cmd *Command) smConnEntry() {
 			xaxa := xaxa
 			log.Println(xaxa.Addr, "from", exit)
 			go func() {
+				ctxid := make([]byte, 32)
+				natrium.RandBytes(ctxid)
 				rawconn, err := net.DialTimeout("tcp", xaxa.Addr, time.Second*10)
 				if err != nil {
 					log.Println("dial to", xaxa.Addr, err.Error())
@@ -52,6 +54,12 @@ func (cmd *Command) smConnEntry() {
 					oconn.Close()
 					return
 				}
+				// 33 empty bytes
+				mconn.Write(make([]byte, 32))
+				// 0x02
+				mconn.Write([]byte{0x02})
+				// ctxid
+				mconn.Write(ctxid)
 				cand := niaucchi2.NewClientCtx()
 				err = cand.Absorb(mconn)
 				if err != nil {

@@ -87,7 +87,7 @@ func (cmd *Command) doProxy() {
 				base32.StdEncoding.EncodeToString(
 					natrium.SecureHash(pub, nil)[:10]))
 			// Ignore the first 33 bytes
-			_, err = io.ReadFull(mwire, make([]byte, 32))
+			_, err = io.ReadFull(mwire, make([]byte, 33))
 			if err != nil {
 				mwire.Close()
 				return

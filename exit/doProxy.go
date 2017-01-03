@@ -56,7 +56,7 @@ func (cmd *Command) manageOneCtx(uid string, nct *niaucchi2.Context) {
 		if err != nil {
 			return
 		}
-		go cmd.proxyCommon(consume, limit, harshlimit, uid, clnt)
+		go cmd.proxyCommon(true, consume, limit, harshlimit, uid, clnt)
 	}
 }
 

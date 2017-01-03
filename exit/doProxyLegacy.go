@@ -69,7 +69,7 @@ func (cmd *Command) doProxyLegacy() {
 				if err != nil {
 					return
 				}
-				go cmd.proxyCommon(consume, limit, harshlimit, uid, clnt)
+				go cmd.proxyCommon(false, consume, limit, harshlimit, uid, clnt)
 			}
 		}()
 	}

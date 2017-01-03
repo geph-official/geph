@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -52,7 +53,20 @@ func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool, limit, harsh
 		return
 	}
 	log.Println("gonna tun", string(addrbts))
-	// we check if the
+	// is it actually a DNS request?
+	if len(addrbts) > 4 && string(addrbts[:4]) == "dns:" {
+		// comma-separated array of addresses
+		addrs, zerr := net.LookupHost(string(addrbts[4:]))
+		if zerr != nil {
+			return
+		}
+		if len(addrs) > 3 {
+			addrs = addrs[:3]
+		}
+		towr := strings.Join(addrs, ",")
+		clnt.Write(append([]byte{byte(len(towr))}, towr...))
+		return
+	}
 	// resolve and connect
 	addr, err := net.ResolveTCPAddr("tcp", string(addrbts))
 	if err != nil {

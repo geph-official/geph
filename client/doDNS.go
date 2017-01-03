@@ -4,9 +4,11 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/bunsim/geph/niaucchi2"
 	"github.com/miekg/dns"
 )
 
@@ -16,24 +18,36 @@ type dnsCacheEntry struct {
 }
 
 func (cmd *Command) resolveName(name string) (ip string, err error) {
-	c := &dns.Client{
-		UDPSize: 65000,
-		Timeout: time.Second * 5,
-	}
-	m := &dns.Msg{}
-	m.SetQuestion(name+".", dns.TypeA)
-	r, _, err := c.Exchange(m, "127.0.0.1:8753")
-	if err != nil {
-		log.Println(err.Error())
+	var myss *niaucchi2.Context
+	myss = cmd.currTunn
+	if myss == nil {
+		err = io.ErrClosedPipe
 		return
 	}
-	for _, ans := range r.Answer {
-		switch ans.(type) {
-		case *dns.A:
-			return ans.(*dns.A).A.String(), nil
-		}
+	conn, err := myss.Tunnel()
+	if err != nil {
+		err = io.ErrClosedPipe
+		return
 	}
-	err = dns.ErrShortRead
+	conn.Write(append([]byte{byte(len(name) + 4)}, []byte("dns:"+name)...))
+	// wait for the response
+	tmr := time.AfterFunc(time.Second*5, func() {
+		myss.Tomb().Kill(niaucchi2.ErrTimeout)
+	})
+	blen := make([]byte, 1)
+	_, err = io.ReadFull(conn, blen)
+	if err != nil {
+		conn.Close()
+		return
+	}
+	stuff := make([]byte, int(blen[0]))
+	_, err = io.ReadFull(conn, stuff)
+	if err != nil {
+		conn.Close()
+		return
+	}
+	ip = strings.Split(string(stuff), ",")[0]
+	tmr.Stop()
 	return
 }
 
@@ -86,8 +100,9 @@ func (cmd *Command) doDNSCache() {
 					return
 				}
 				lok.Unlock()
+				// we still don't need to ask Google just yet.
 			}
-			// well I guess the cache doesn't have what we want...
+			// well I guess we need to ask Google...
 			in, _, err := clnt.Exchange(r, "127.0.0.1:8753")
 			if err != nil {
 				log.Println("tunneled DNS resolution of", r.Question[0].Name, "failed:", err.Error())

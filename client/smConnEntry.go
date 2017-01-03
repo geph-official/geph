@@ -20,10 +20,7 @@ func (cmd *Command) smConnEntry() {
 	log.Println("** => ConnEntry **")
 	defer log.Println("** <= ConnEntry **")
 
-	FANOUT := 6
-	if cmd.powersave {
-		FANOUT = 1
-	}
+	FANOUT := 1
 	// TODO make this do something
 	func(interface{}) {}(FANOUT)
 
@@ -35,43 +32,50 @@ func (cmd *Command) smConnEntry() {
 			xaxa := xaxa
 			log.Println(xaxa.Addr, "from", exit)
 			go func() {
-				ctxid := make([]byte, 32)
-				natrium.RandBytes(ctxid)
-				rawconn, err := net.DialTimeout("tcp", xaxa.Addr, time.Second*10)
-				if err != nil {
-					log.Println("dial to", xaxa.Addr, err.Error())
-					return
-				}
-				oconn, err := cluttershirt.Client(xaxa.Cookie, rawconn)
-				if err != nil {
-					log.Println("cluttershirt to", xaxa.Addr, err.Error())
-					rawconn.Close()
-					return
-				}
-				// 0x00 for a negotiable protocol
-				oconn.Write([]byte{0x00})
-				mconn, err := miniss.Handshake(oconn, cmd.identity)
-				if err != nil {
-					log.Println("miniss to", xaxa.Addr, err.Error())
-					oconn.Close()
-					return
-				}
-				log.Println("miniss to", xaxa.Addr, "okay")
-				// 0x02
-				log.Println("gonna send", len(append([]byte{0x02}, ctxid...)))
-				_, err = mconn.Write(append([]byte{0x02}, ctxid...))
-				if err != nil {
-					log.Println("ctxid to", xaxa.Addr, err.Error())
-					mconn.Close()
-					return
-				}
-				log.Println("id to", xaxa.Addr, "okay")
 				cand := niaucchi2.NewClientCtx()
-				err = cand.Absorb(mconn)
-				if err != nil {
-					log.Println("absorb to", xaxa.Addr, err.Error())
-					mconn.Close()
-					return
+				for i := 0; i < FANOUT; i++ {
+					ctxid := make([]byte, 32)
+					natrium.RandBytes(ctxid)
+					rawconn, err := net.DialTimeout("tcp", xaxa.Addr, time.Second*10)
+					if err != nil {
+						log.Println("dial to", xaxa.Addr, err.Error())
+						return
+					}
+					oconn, err := cluttershirt.Client(xaxa.Cookie, rawconn)
+					if err != nil {
+						log.Println("cluttershirt to", xaxa.Addr, err.Error())
+						rawconn.Close()
+						return
+					}
+					// 0x00 for a negotiable protocol
+					oconn.Write([]byte{0x00})
+					mconn, err := miniss.Handshake(oconn, cmd.identity)
+					if err != nil {
+						log.Println("miniss to", xaxa.Addr, err.Error())
+						oconn.Close()
+						return
+					}
+					if natrium.CTCompare(mconn.RemotePK(), xaxa.ExitKey.ToECDH()) != 0 {
+						log.Println("miniss to", xaxa.Addr, "bad auth")
+						oconn.Close()
+						return
+					}
+					log.Println("miniss to", xaxa.Addr, "okay")
+					// 0x02
+					log.Println("gonna send", len(append([]byte{0x02}, ctxid...)))
+					_, err = mconn.Write(append([]byte{0x02}, ctxid...))
+					if err != nil {
+						log.Println("ctxid to", xaxa.Addr, err.Error())
+						mconn.Close()
+						return
+					}
+					log.Println("id to", xaxa.Addr, "okay")
+					err = cand.Absorb(mconn)
+					if err != nil {
+						log.Println("absorb to", xaxa.Addr, err.Error())
+						mconn.Close()
+						return
+					}
 				}
 				select {
 				case retline <- cand:
@@ -79,7 +83,7 @@ func (cmd *Command) smConnEntry() {
 					cmd.stats.netinfo.entry = natrium.HexEncode(
 						natrium.SecureHash(xaxa.Cookie, nil)[:8])
 					cmd.stats.netinfo.exit = exit
-					cmd.stats.netinfo.prot = "cl-ni-1"
+					cmd.stats.netinfo.prot = "cl-ni-2"
 					cmd.stats.Unlock()
 					log.Println(xaxa.Addr, "WINNER")
 				case <-dedline:

@@ -12,7 +12,7 @@ import (
 	"github.com/bunsim/geph/common"
 )
 
-func (cmd *Command) proxyCommon(consume func(int) bool, limit, harshlimit *rate.Limiter,
+func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool, limit, harshlimit *rate.Limiter,
 	uid string, clnt io.ReadWriteCloser) {
 	// other things
 	ctx := context.Background()
@@ -46,6 +46,9 @@ func (cmd *Command) proxyCommon(consume func(int) bool, limit, harshlimit *rate.
 	addrbts := make([]byte, lb[0])
 	_, err = io.ReadFull(clnt, addrbts)
 	if err != nil {
+		if doAck {
+			clnt.Write([]byte{0x01})
+		}
 		return
 	}
 	log.Println("gonna tun", string(addrbts))
@@ -53,20 +56,35 @@ func (cmd *Command) proxyCommon(consume func(int) bool, limit, harshlimit *rate.
 	// resolve and connect
 	addr, err := net.ResolveTCPAddr("tcp", string(addrbts))
 	if err != nil {
+		if doAck {
+			clnt.Write([]byte{0x04})
+		}
 		return
 	}
 	// block connections to things in the CIDR blacklist
 	if isBlack(addr) {
+		if doAck {
+			clnt.Write([]byte{0x02})
+		}
 		return
 	}
 	// block connections to forbidden ports
 	if !common.AllowedPorts[addr.Port] {
+		if doAck {
+			clnt.Write([]byte{0x02})
+		}
 		return
 	}
 	// go ahead and connect
 	rmt, err := net.DialTimeout("tcp", addr.String(), time.Second*5)
 	if err != nil {
+		if doAck {
+			clnt.Write([]byte{0x05})
+		}
 		return
+	}
+	if doAck {
+		clnt.Write([]byte{0x00})
 	}
 	// forward traffic
 	defer rmt.Close()

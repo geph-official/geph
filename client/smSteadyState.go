@@ -1,10 +1,10 @@
 package client
 
 import (
-	"errors"
 	"io"
 	"log"
 	"net"
+	"time"
 
 	"golang.org/x/net/proxy"
 
@@ -49,21 +49,41 @@ func (cmd *Command) dialTun(dest string) (conn net.Conn, err error) {
 	return sks.Dial("tcp", dest)
 }
 
-func (cmd *Command) dialTunRaw(dest string) (conn io.ReadWriteCloser, err error) {
+func (cmd *Command) dialTunRaw(dest string) (conn io.ReadWriteCloser, code byte) {
+	var err error
 	if !cmd.filterDest(dest) {
-		return net.Dial("tcp", dest)
+		conn, err = net.Dial("tcp", dest)
+		if err != nil {
+			code = 0x03
+		}
+		return
 	}
 	var myss *niaucchi2.Context
 	myss = cmd.currTunn
 	if myss == nil {
-		err = errors.New("null")
+		code = 0x03
 		return
 	}
 	conn, err = myss.Tunnel()
 	if err != nil {
+		code = 0x03
 		return
 	}
 	conn.Write(append([]byte{byte(len(dest))}, []byte(dest)...))
+	// wait for the status code
+	tmr := time.AfterFunc(time.Second*5, func() {
+		myss.Tomb().Kill(niaucchi2.ErrTimeout)
+	})
+	b := make([]byte, 1)
+	_, err = io.ReadFull(conn, b)
+	if err != nil {
+		conn.Close()
+		code = 0x03
+	}
+	if code != 0x00 {
+		conn.Close()
+	}
+	tmr.Stop()
 	return
 }
 
@@ -79,9 +99,9 @@ func (cmd *Command) doSocks(lsnr net.Listener) {
 			if err != nil {
 				return
 			}
-			conn, err := cmd.dialTunRaw(dest)
-			if err != nil {
-				tinysocks.CompleteRequest(0x03, clnt)
+			conn, code := cmd.dialTunRaw(dest)
+			if code != 0x00 {
+				tinysocks.CompleteRequest(code, clnt)
 				return
 			}
 			defer conn.Close()

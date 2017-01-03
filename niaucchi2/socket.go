@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"sync"
+	"time"
 
 	"github.com/lunixbochs/struc"
 
@@ -72,9 +73,11 @@ func (sok *socket) realWrite(p []byte) (n int, err error) {
 		err = sok.death.Err()
 		return
 	}
+	sok.parent.wire.SetWriteDeadline(time.Now().Add(time.Second * 5))
 	err = struc.Pack(sok.parent.wire, &segment{Flag: flData,
 		Sokid: uint16(sok.sockid),
 		Body:  p})
+	sok.parent.wire.SetWriteDeadline(time.Time{})
 	if err != nil {
 		return
 	}

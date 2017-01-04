@@ -37,7 +37,7 @@ func (cmd *Command) smFindEntry() {
 			cmd.cdb.Exec("INSERT OR REPLACE INTO main VALUES('bst.entries', $1)", bts)
 			// max of 24 hours
 			cmd.cdb.Exec("INSERT OR REPLACE INTO main VALUES('bst.expires', $1)",
-				time.Now().Add(time.Hour*24).Unix())
+				time.Now().Add(time.Hour).Unix())
 		}
 		cmd.smState = cmd.smConnEntry
 	}

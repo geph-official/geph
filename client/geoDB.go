@@ -50,7 +50,12 @@ func (gdb *geoDB) LoadCSV(fname string) (err error) {
 
 func (gdb *geoDB) GetCountry(ip net.IP) string {
 	// convert IP to integer
-	ipint := uint(binary.BigEndian.Uint32(ip[12:]))
+	ipint := (func() uint {
+		if len(ip) == 4 {
+			return uint(binary.BigEndian.Uint32(ip))
+		}
+		return uint(binary.BigEndian.Uint32(ip[12:]))
+	})()
 	// binary search
 	sl := gdb.slice
 	lo := 0

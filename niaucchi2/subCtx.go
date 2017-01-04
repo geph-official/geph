@@ -156,6 +156,12 @@ func (sctx *subCtx) mainThread() (err error) {
 					}
 				}
 			} else {
+				if newseg.Flag == flClos {
+					log.Println("niaucchi2: socket", dest.sockid, "got CLOS, deregistering")
+					sctx.parent.tabLock.Lock()
+					delete(sctx.parent.sokTable, dest.sockid)
+					sctx.parent.tabLock.Unlock()
+				}
 				select {
 				case dest.incoming <- newseg:
 				default:

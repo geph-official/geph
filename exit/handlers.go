@@ -37,8 +37,17 @@ func (cmd *Command) handUpdateNode(w http.ResponseWriter, r *http.Request) {
 func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Cache-Control", "max-age=500")
 	var tosend struct {
-		Expires string
-		Nodes   map[string][]byte
+		Expires  string
+		Nodes    map[string][]byte
+		Fallback struct {
+			Front string
+			Host  string
+		}
+	}
+
+	if cmd.wfFront != "" {
+		tosend.Fallback.Front = cmd.wfFront
+		tosend.Fallback.Host = cmd.wfHost
 	}
 
 	// get the IP of the client. if the request comes from the binder, we trust the X-Forwarded-For

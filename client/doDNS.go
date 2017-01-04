@@ -2,7 +2,6 @@ package client
 
 import (
 	"io"
-	"log"
 	"net"
 	"strings"
 	"sync"
@@ -13,11 +12,22 @@ import (
 )
 
 type dnsCacheEntry struct {
-	response interface{}
+	response string
 	deadline time.Time
 }
 
+// TODO don't make this global, this sucks
+var dnsCache = make(map[string]*dnsCacheEntry)
+var dnsCacheLock sync.Mutex
+
 func (cmd *Command) resolveName(name string) (ip string, err error) {
+	dnsCacheLock.Lock()
+	if dnsCache[name] != nil && dnsCache[name].deadline.After(time.Now()) {
+		ip = dnsCache[name].response
+		dnsCacheLock.Unlock()
+		return
+	}
+	dnsCacheLock.Unlock()
 	var myss *niaucchi2.Context
 	myss = cmd.currTunn
 	if myss == nil {
@@ -31,7 +41,7 @@ func (cmd *Command) resolveName(name string) (ip string, err error) {
 	}
 	conn.Write(append([]byte{byte(len(name) + 4)}, []byte("dns:"+name)...))
 	// wait for the response
-	tmr := time.AfterFunc(time.Second*5, func() {
+	tmr := time.AfterFunc(time.Second*15, func() {
 		myss.Tomb().Kill(niaucchi2.ErrTimeout)
 	})
 	blen := make([]byte, 1)
@@ -48,120 +58,48 @@ func (cmd *Command) resolveName(name string) (ip string, err error) {
 	}
 	ip = strings.Split(string(stuff), ",")[0]
 	tmr.Stop()
+	dnsCacheLock.Lock()
+	dnsCache[name] = &dnsCacheEntry{
+		response: ip,
+		deadline: time.Now().Add(time.Hour),
+	}
+	dnsCacheLock.Unlock()
 	return
 }
 
-func (cmd *Command) doDNSCache() {
-	// client that connects to our own TCP
-	clnt := &dns.Client{
-		Net:     "tcp",
-		Timeout: time.Second * 5,
-	}
-
-	tbl := make(map[string]dnsCacheEntry)
-	var lok sync.Mutex
-
-	// thread that cleans things up
-	go func() {
-		for {
-			time.Sleep(time.Hour)
-			lok.Lock()
-			var todel []string
-			for k, v := range tbl {
-				if v.deadline.After(time.Now()) {
-					todel = append(todel, k)
-				}
-			}
-			for _, k := range todel {
-				delete(tbl, k)
-			}
-			lok.Unlock()
-		}
-	}()
-
-	// our server currently just forwards to the TCP
+func (cmd *Command) doDNS() {
+	// our server
 	serv := &dns.Server{
 		Net:  "udp",
 		Addr: "127.0.0.1:8753",
 		Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
 			q := r.Question[0]
-			// check cache if A or CNAME
+			// we can't do anything if not A or CNAME
 			if q.Qtype == dns.TypeA || q.Qtype == dns.TypeCNAME {
-				lok.Lock()
-				rsp := tbl[q.Name]
-				if rsp.response != nil && rsp.deadline.After(time.Now()) {
-					msg := rsp.response.(*dns.Msg)
-					msg.Id = r.Id
-					for _, v := range msg.Answer {
-						v.Header().Ttl = uint32(rsp.deadline.Sub(time.Now()).Seconds())
-					}
-					w.WriteMsg(msg)
-					lok.Unlock()
+				ans, err := cmd.resolveName(q.Name)
+				if err != nil {
+					dns.HandleFailed(w, r)
 					return
 				}
-				lok.Unlock()
-				// we still don't need to ask Google just yet.
+				ip, _ := net.ResolveIPAddr("ip4", ans)
+				m := new(dns.Msg)
+				m.SetReply(r)
+				m.Answer = append(m.Answer, &dns.A{
+					Hdr: dns.RR_Header{
+						Name:   q.Name,
+						Rrtype: dns.TypeA,
+						Class:  dns.ClassINET,
+						Ttl:    60,
+					},
+					A: ip.IP,
+				})
+				w.WriteMsg(m)
 			}
-			// well I guess we need to ask Google...
-			in, _, err := clnt.Exchange(r, "127.0.0.1:8753")
-			if err != nil {
-				log.Println("tunneled DNS resolution of", r.Question[0].Name, "failed:", err.Error())
-				return
-			}
-			// truncate it
-			for _, a := range in.Answer {
-				a.Header().Ttl = 3600
-			}
-			in.Extra = nil
-			in.Ns = nil
-
-			w.WriteMsg(in)
-			// now put into cache
-			if q.Qtype == dns.TypeA || q.Qtype == dns.TypeCNAME {
-				lok.Lock()
-				var zaza dnsCacheEntry
-				zaza.deadline = time.Now().Add(time.Hour)
-				zaza.response = in
-				tbl[q.Name] = zaza
-				lok.Unlock()
-			}
+			dns.HandleFailed(w, r)
 		}),
 	}
 	err := serv.ListenAndServe()
 	if err != nil {
 		panic(err.Error())
 	}
-}
-
-func (cmd *Command) doDNS() {
-	lsner, err := net.Listen("tcp", "127.0.0.1:8753")
-	if err != nil {
-		panic(err.Error())
-	}
-	// the TCP tunnels to Comodo's DNS
-	go func() {
-		for {
-			clnt, err := lsner.Accept()
-			if err != nil {
-				panic(err.Error())
-			}
-			go func() {
-				defer clnt.Close()
-				rmt, err := cmd.dialTun("8.8.8.8:53")
-				if err != nil {
-					log.Println("failed to tunnel to DNS server:", err.Error())
-					return
-				}
-				defer rmt.Close()
-				go func() {
-					defer rmt.Close()
-					defer clnt.Close()
-					io.Copy(clnt, rmt)
-				}()
-				io.Copy(rmt, clnt)
-			}()
-		}
-	}()
-	// the UDP does caching at stuff
-	cmd.doDNSCache()
 }

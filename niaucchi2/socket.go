@@ -128,10 +128,6 @@ func (sok *socket) Read(p []byte) (n int, err error) {
 			}
 			return
 		case flClos:
-			log.Println("niaucchi2: socket", sok.sockid, "got CLOS, deregistering")
-			sok.parent.parent.tabLock.Lock()
-			delete(sok.parent.parent.sokTable, sok.sockid)
-			sok.parent.parent.tabLock.Unlock()
 			sok.death.Kill(io.EOF)
 			err = io.EOF
 			return

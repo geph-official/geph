@@ -3,6 +3,7 @@ package warpfront
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -68,22 +69,36 @@ func Connect(client *http.Client, frontHost string, realHost string) (net.Conn, 
 				return
 			}
 			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusContinue {
+				log.Println("WAT DIE")
 				resp.Body.Close()
 				return
 			}
 
-			buf := make([]byte, 65536)
 			for {
-				n, err := resp.Body.Read(buf)
+				lbts := make([]byte, 4)
+				_, err := io.ReadFull(resp.Body, lbts)
 				if err != nil {
+					resp.Body.Close()
+					return
+				}
+				if binary.BigEndian.Uint32(lbts) == 0 {
+					log.Println("warpfront: client got continuation signal, looping around")
 					resp.Body.Close()
 					goto OUT
 				}
-				cpy := make([]byte, n)
-				copy(cpy, buf)
+				buf := make([]byte, binary.BigEndian.Uint32(lbts))
+				_, err = io.ReadFull(resp.Body, buf)
+				if err != nil {
+					resp.Body.Close()
+					return
+				}
 				select {
-				case sesh.rx <- cpy:
+				case sesh.rx <- buf:
 				case <-sesh.ded:
+					resp.Body.Close()
+					return
+				}
+				if err != nil {
 					resp.Body.Close()
 					return
 				}

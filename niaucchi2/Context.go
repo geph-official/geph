@@ -83,6 +83,14 @@ func (ctx *Context) Tunnel() (conn io.ReadWriteCloser, err error) {
 	sctx.wirewlok.Unlock()
 	// return the newsok
 	conn = newsok
+	// Tie up the death of the socket with our death
+	go func() {
+		select {
+		case <-ctx.death.Dying():
+			newsok.death.Kill(ctx.death.Err())
+		case <-newsok.death.Dying():
+		}
+	}()
 	return
 }
 

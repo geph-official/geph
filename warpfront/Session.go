@@ -45,7 +45,7 @@ func (sess *session) Read(p []byte) (int, error) {
 	select {
 	case bts := <-sess.rx:
 		sess.buf.Write(bts)
-		return sess.buf.Read(p)
+		return sess.Read(p)
 	case <-sess.ded:
 		return 0, io.ErrClosedPipe
 	}
@@ -72,7 +72,7 @@ func (sess *session) SetDeadline(t time.Time) error {
 }
 
 func (sess *session) SetWriteDeadline(t time.Time) error {
-	log.Println("SetWriteDeadline on warpfront.Session is currently no-op")
+	//log.Println("SetWriteDeadline on warpfront.Session is currently no-op")
 	return nil
 }
 

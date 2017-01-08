@@ -30,20 +30,21 @@ func TestServer(t *testing.T) {
 	if err != nil {
 		panic(err.Error())
 	}
-	sesh = RWCNagle(sesh)
+	//sesh = RWCNagle(sesh)
 
 	defer sesh.Close()
 	go func() {
 		defer sesh.Close()
 		for i := 0; i < 1000; i++ {
 			fmt.Fprintln(sesh, "line", i)
-			time.Sleep(time.Millisecond * 30)
+			//time.Sleep(time.Millisecond * 200)
 		}
 	}()
 	for {
 		xaxa := make([]byte, 4096)
 		n, err := sesh.Read(xaxa)
 		if err != nil {
+			log.Println(err.Error())
 			break
 		}
 		log.Print(string(xaxa[:n]))

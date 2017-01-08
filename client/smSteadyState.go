@@ -72,6 +72,7 @@ func (cmd *Command) dialTunRaw(dest string) (conn io.ReadWriteCloser, code byte)
 	conn.Write(append([]byte{byte(len(dest))}, []byte(dest)...))
 	// wait for the status code
 	tmr := time.AfterFunc(time.Second*15, func() {
+		log.Println("TIME OUT!")
 		myss.Tomb().Kill(niaucchi2.ErrTimeout)
 	})
 	b := make([]byte, 1)

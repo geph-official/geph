@@ -31,8 +31,9 @@ func (cmd *Command) smQueryExits() {
 			continue
 		}
 		var lol struct {
-			Expires string
-			Nodes   map[string][]byte
+			Expires  string
+			Nodes    map[string][]byte
+			Fallback map[string]string
 		}
 		buf := new(bytes.Buffer)
 		io.Copy(buf, resp.Body)
@@ -64,6 +65,13 @@ func (cmd *Command) smQueryExits() {
 			entries[ext] = append(entries[ext], entryInfo{
 				Addr:    addr,
 				Cookie:  cook,
+				ExitKey: natrium.EdDSAPublic(kee),
+			})
+		}
+		if lol.Fallback["Front"] != "" {
+			entries[ext] = append(entries[ext], entryInfo{
+				Addr:    "warpfront",
+				Cookie:  []byte(lol.Fallback["Front"] + ";" + lol.Fallback["Host"]),
 				ExitKey: natrium.EdDSAPublic(kee),
 			})
 		}

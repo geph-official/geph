@@ -2,7 +2,9 @@ package warpfront
 
 import (
 	"bytes"
+	"encoding/binary"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -93,7 +95,7 @@ func (srv *Server) handleRegister(wr http.ResponseWriter, rq *http.Request) {
 			<-chs.ded
 			srv.destroySession(sesh)
 		}()
-	case <-time.After(time.Second * 10):
+	case <-time.After(time.Second * 1):
 		srv.destroySession(sesh)
 		wr.WriteHeader(http.StatusInternalServerError)
 	}
@@ -128,28 +130,42 @@ func (srv *Server) ServeHTTP(wr http.ResponseWriter, rq *http.Request) {
 	wr.Header().Set("Content-Encoding", "application/octet-stream")
 	wr.Header().Set("Cache-Control", "no-cache, no-store")
 
+	// signal for continuing
+	contbuf := make([]byte, 4)
+	binary.BigEndian.PutUint32(contbuf, 0)
+
 	switch rq.Method {
 	case "GET":
 		ctr := 0
 		start := time.Now()
-		for ctr < 1024*1024 && time.Now().Sub(start) < time.Second*10 {
+		for ctr < 1024*1024 && time.Now().Sub(start) < time.Second*120 {
 			select {
 			case bts := <-dn:
-				_, err := wr.Write(bts)
+				// write length, then bytes
+				buf := make([]byte, 4)
+				binary.BigEndian.PutUint32(buf, uint32(len(bts)))
+				_, err := wr.Write(append(buf, bts...))
 				if err != nil {
 					srv.destroySession(key)
+					log.Println("GET done since we can't write")
 					return
 				}
 				ctr += len(bts)
 				wr.(http.Flusher).Flush()
 			case <-time.After(time.Second * 60):
-				//wr.WriteHeader(http.StatusContinue)
+				log.Println("GET done since ran out of time")
+				wr.Write(contbuf)
+				wr.(http.Flusher).Flush()
 				return
 			case <-ded:
 				srv.destroySession(key)
+				log.Println("GET done since we randomly died")
 				return
 			}
 		}
+		wr.Write(contbuf)
+		wr.(http.Flusher).Flush()
+		log.Println("GET done since ran out of ctr")
 	case "POST":
 		pkrd := new(bytes.Buffer)
 		_, err := io.Copy(pkrd, rq.Body)

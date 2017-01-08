@@ -137,5 +137,8 @@ func (sok *socket) Read(p []byte) (n int, err error) {
 			err = ErrProtocolFail
 			return
 		}
+	case <-sok.death.Dying():
+		err = sok.death.Err()
+		return
 	}
 }

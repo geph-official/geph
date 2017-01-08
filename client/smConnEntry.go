@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"time"
 
 	"gopkg.in/bunsim/miniss.v1"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/bunsim/cluttershirt"
 	"github.com/bunsim/geph/niaucchi2"
+	"github.com/bunsim/geph/warpfront"
 )
 
 // smConnEntry is the ConnEntry state, where a connection to some entry node is established.
@@ -31,9 +33,55 @@ func (cmd *Command) smConnEntry() {
 			exit := exit
 			xaxa := xaxa
 			log.Println(xaxa.Addr, "from", exit)
-			go func() {
-				cand := niaucchi2.NewClientCtx()
-				for i := 0; i < FANOUT; i++ {
+			if xaxa.Addr == "warpfront" {
+				go func() {
+					//xaxa.Cookie = []byte("http://localhost:8088;d2hk1ucgmi0pgc.cloudfront.net")
+					select {
+					case <-time.After(time.Second * 5):
+						log.Println("time's up, falling back to", string(xaxa.Cookie))
+					case <-dedline:
+						return
+					}
+					splitted := strings.Split(string(xaxa.Cookie), ";")
+					xaxa.Addr = string(xaxa.Cookie)
+					rawconn, err := warpfront.Connect(cleanHTTP, splitted[0], splitted[1])
+					if err != nil {
+						log.Println("warpfront to", string(xaxa.Cookie), err.Error())
+						return
+					}
+					rawconn = warpfront.RWCNagle(rawconn)
+					mconn, err := miniss.Handshake(rawconn, cmd.identity)
+					if err != nil {
+						log.Println("miniss to", xaxa.Addr, err.Error())
+						rawconn.Close()
+						return
+					}
+					/*if natrium.CTCompare(mconn.RemotePK(), xaxa.ExitKey.ToECDH()) != 0 {
+						log.Println("miniss to", xaxa.Addr, "bad auth")
+						rawconn.Close()
+						return
+					}*/
+					mconn.Write([]byte{0x02})
+					// No ctxid for warpfront
+					cand := niaucchi2.NewClientCtx()
+					cand.Absorb(mconn)
+					select {
+					case retline <- cand:
+						cmd.stats.Lock()
+						cmd.stats.netinfo.entry = natrium.HexEncode(
+							natrium.SecureHash(xaxa.Cookie, nil)[:8])
+						cmd.stats.netinfo.exit = exit
+						cmd.stats.netinfo.prot = "wf-ni-2"
+						cmd.stats.Unlock()
+						log.Println(xaxa.Addr, "WINNER")
+					case <-dedline:
+						log.Println(xaxa.Addr, "failed race")
+						cand.Tomb().Kill(io.ErrClosedPipe)
+					}
+				}()
+			} else {
+				go func() {
+					cand := niaucchi2.NewClientCtx()
 					ctxid := make([]byte, 32)
 					natrium.RandBytes(ctxid)
 					rawconn, err := net.DialTimeout("tcp", xaxa.Addr, time.Second*10)
@@ -76,27 +124,27 @@ func (cmd *Command) smConnEntry() {
 						mconn.Close()
 						return
 					}
-				}
-				select {
-				case retline <- cand:
-					cmd.stats.Lock()
-					cmd.stats.netinfo.entry = natrium.HexEncode(
-						natrium.SecureHash(xaxa.Cookie, nil)[:8])
-					cmd.stats.netinfo.exit = exit
-					cmd.stats.netinfo.prot = "cl-ni-2"
-					cmd.stats.Unlock()
-					log.Println(xaxa.Addr, "WINNER")
-				case <-dedline:
-					log.Println(xaxa.Addr, "failed race")
-					cand.Tomb().Kill(io.ErrClosedPipe)
-				}
-			}()
+					select {
+					case retline <- cand:
+						cmd.stats.Lock()
+						cmd.stats.netinfo.entry = natrium.HexEncode(
+							natrium.SecureHash(xaxa.Cookie, nil)[:8])
+						cmd.stats.netinfo.exit = exit
+						cmd.stats.netinfo.prot = "cl-ni-2"
+						cmd.stats.Unlock()
+						log.Println(xaxa.Addr, "WINNER")
+					case <-dedline:
+						log.Println(xaxa.Addr, "failed race")
+						cand.Tomb().Kill(io.ErrClosedPipe)
+					}
+				}()
+			}
 		}
 	}
 
 	select {
-	case <-time.After(time.Second * 10):
-		log.Println("ConnEntry: failed to connect to anything within 10 seconds")
+	case <-time.After(time.Second * 15):
+		log.Println("ConnEntry: failed to connect to anything within 15 seconds")
 		cmd.smState = cmd.smClearCache
 		return
 	case ss := <-retline:

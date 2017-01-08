@@ -115,8 +115,11 @@ func (sctx *subCtx) mainThread() (err error) {
 			}
 			// Tie up the death of the socket with our death
 			go func() {
-				<-sctx.death.Dying()
-				newsok.death.Kill(sctx.death.Err())
+				select {
+				case <-sctx.death.Dying():
+					newsok.death.Kill(sctx.death.Err())
+				case <-newsok.death.Dying():
+				}
 			}()
 			// Stuff the new socket into our parent
 			sctx.parent.tabLock.Lock()

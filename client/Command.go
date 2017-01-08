@@ -41,9 +41,9 @@ func init() {
 var cleanHTTP = &http.Client{
 	Transport: &http.Transport{
 		TLSHandshakeTimeout: time.Second * 10,
-		IdleConnTimeout:     time.Second * 1,
+		IdleConnTimeout:     time.Second * 10,
 	},
-	Timeout: time.Second * 10,
+	Timeout: time.Second * 200,
 }
 
 type entryInfo struct {

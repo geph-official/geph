@@ -54,6 +54,7 @@ func (cmd *Command) manageOneCtx(uid string, nct *niaucchi2.Context) {
 	for {
 		clnt, err := nct.Accept()
 		if err != nil {
+			log.Println("exiting manageOneCtx:", err.Error())
 			return
 		}
 		go cmd.proxyCommon(true, consume, limit, harshlimit, uid, clnt)

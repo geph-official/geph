@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/lunixbochs/struc"
 
@@ -31,6 +32,7 @@ type Context struct {
 	tabLock  sync.RWMutex
 
 	acptQueue chan io.ReadWriteCloser
+	pingCbak  chan bool
 
 	death tomb.Tomb
 }
@@ -51,6 +53,33 @@ func (ctx *Context) Accept() (conn io.ReadWriteCloser, err error) {
 	}
 }
 
+// Ping measures the time it takes to send and receive a certain amount of data. Only one ping may be in flight at a given time!
+func (ctx *Context) Ping(bts []byte) (rtt time.Duration, err error) {
+	start := time.Now()
+	ctx.tabLock.Lock()
+	// select a subctx
+	var cands []*subCtx
+	for _, v := range ctx.subTable {
+		cands = append(cands, v)
+	}
+	sctx := cands[rand.Int()%len(cands)]
+	ctx.tabLock.Unlock()
+	sctx.wirewlok.Lock()
+	defer sctx.wirewlok.Unlock()
+	err = struc.Pack(sctx.wire, &segment{Flag: flPing, Body: bts})
+	if err != nil {
+		return
+	}
+	select {
+	case <-ctx.death.Dying():
+		err = ctx.death.Err()
+		return
+	case <-ctx.pingCbak:
+		rtt = time.Now().Sub(start)
+		return
+	}
+}
+
 // Tunnel must be called by only the client.
 func (ctx *Context) Tunnel() (conn io.ReadWriteCloser, err error) {
 	ctx.tabLock.Lock()
@@ -58,7 +87,6 @@ func (ctx *Context) Tunnel() (conn io.ReadWriteCloser, err error) {
 	var cands []*subCtx
 	for _, v := range ctx.subTable {
 		cands = append(cands, v)
-		break
 	}
 	sctx := cands[rand.Int()%len(cands)]
 	// select a socketID
@@ -153,6 +181,7 @@ func NewServerCtx() *Context {
 		isClient: false,
 		subTable: make(map[subCtxID]*subCtx),
 		sokTable: make(map[socketID]*socket),
+		pingCbak: make(chan bool),
 
 		acptQueue: make(chan io.ReadWriteCloser, 256),
 	}

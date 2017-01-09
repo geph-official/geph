@@ -32,7 +32,7 @@ func (cmd *Command) smConnEntry() {
 	// barrier to prevent the initial connection from ruining the race
 	barr := make(chan bool)
 	go func() {
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 1)
 		close(barr)
 	}()
 	for exit, entries := range cmd.entryCache {
@@ -99,7 +99,6 @@ func (cmd *Command) smConnEntry() {
 						rawconn.Close()
 						return
 					}
-					log.Println("cluttershirt to", xaxa.Addr, "okay")
 					// make the race fair
 					<-barr
 					// 0x00 for a negotiable protocol
@@ -115,16 +114,13 @@ func (cmd *Command) smConnEntry() {
 						oconn.Close()
 						return
 					}
-					log.Println("miniss to", xaxa.Addr, "okay")
 					// 0x02
-					log.Println("gonna send", len(append([]byte{0x02}, ctxid...)))
 					_, err = mconn.Write(append([]byte{0x02}, ctxid...))
 					if err != nil {
 						log.Println("ctxid to", xaxa.Addr, err.Error())
 						mconn.Close()
 						return
 					}
-					log.Println("id to", xaxa.Addr, "okay")
 					return
 				}
 				go func() {
@@ -142,6 +138,9 @@ func (cmd *Command) smConnEntry() {
 						mconn.Close()
 						return
 					}
+					// for the first one, we send 50K back and forth twice to eliminate low-latency but congested links
+					cand.Ping(make([]byte, 50000))
+					cand.Ping(make([]byte, 50000))
 					select {
 					case retline <- cand:
 						cmd.stats.Lock()

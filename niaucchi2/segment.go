@@ -7,6 +7,7 @@ const (
 	flData = 0x10
 	flIcwd = 0x11
 
+	flPing = 0xee
 	flAliv = 0xff
 )
 

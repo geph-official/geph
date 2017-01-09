@@ -1,15 +1,19 @@
 package niaucchi2
 
 import (
+	"fmt"
 	"io"
 	"net"
 	"testing"
 	"time"
 )
 
-func TestLol(t *testing.T) {
+func BenchmarkLol(b *testing.B) {
 	go func() {
-		lsnr, _ := net.Listen("tcp", "127.0.0.1:13371")
+		lsnr, err := net.Listen("tcp", "127.0.0.1:13371")
+		if err != nil {
+			panic(err.Error())
+		}
 		cont := NewServerCtx()
 		for {
 			zzz, _ := lsnr.Accept()
@@ -43,6 +47,10 @@ func TestLol(t *testing.T) {
 		if err != nil {
 			panic(err.Error())
 		}
+	}
+	for i := 0; i < 10; i++ {
+		dur, _ := cont.Ping(make([]byte, 50000))
+		fmt.Println(dur, i)
 	}
 	lsnr, _ := net.Listen("tcp", "127.0.0.1:13370")
 	for {

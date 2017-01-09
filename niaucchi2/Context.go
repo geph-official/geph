@@ -181,7 +181,6 @@ func NewServerCtx() *Context {
 		isClient: false,
 		subTable: make(map[subCtxID]*subCtx),
 		sokTable: make(map[socketID]*socket),
-		pingCbak: make(chan bool),
 
 		acptQueue: make(chan io.ReadWriteCloser, 256),
 	}
@@ -193,5 +192,6 @@ func NewClientCtx() *Context {
 		isClient: true,
 		subTable: make(map[subCtxID]*subCtx),
 		sokTable: make(map[socketID]*socket),
+		pingCbak: make(chan bool),
 	}
 }

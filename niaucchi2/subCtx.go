@@ -97,11 +97,20 @@ func (sctx *subCtx) mainThread() (err error) {
 		switch newseg.Flag {
 		case flPing:
 			log.Println("niaucchi2: PING on", sctx.subid)
-			go func() {
-				sctx.wirewlok.Lock()
-				defer sctx.wirewlok.Unlock()
-				struc.Pack(sctx.wire, &newseg)
-			}()
+			if sctx.parent.isClient {
+				log.Println("KICK")
+				select {
+				case sctx.parent.pingCbak <- true:
+				case <-sctx.death.Dying():
+					return
+				}
+			} else {
+				go func() {
+					sctx.wirewlok.Lock()
+					defer sctx.wirewlok.Unlock()
+					struc.Pack(sctx.wire, &newseg)
+				}()
+			}
 		case flAliv:
 			log.Println("niaucchi2: ALIV on", sctx.subid)
 		case flOpen:

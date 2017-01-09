@@ -23,11 +23,14 @@ func (cmd *Command) smConnEntry() {
 	defer log.Println("** <= ConnEntry **")
 
 	FANOUT := 1
-	// TODO make this do something
-	func(interface{}) {}(FANOUT)
+	if !cmd.powersave {
+		FANOUT = 8
+	}
 
 	retline := make(chan *niaucchi2.Context)
 	dedline := make(chan bool)
+	// barrier to prevent the initial connection from ruining the race
+	barr := time.After(time.Second * 2)
 	for exit, entries := range cmd.entryCache {
 		for _, xaxa := range entries {
 			exit := exit
@@ -37,7 +40,7 @@ func (cmd *Command) smConnEntry() {
 				go func() {
 					//xaxa.Cookie = []byte("http://localhost:8088;d2hk1ucgmi0pgc.cloudfront.net")
 					select {
-					case <-time.After(time.Second * 5):
+					case <-time.After(time.Second * 6):
 						log.Println("time's up, falling back to", string(xaxa.Cookie))
 					case <-dedline:
 						return
@@ -80,10 +83,7 @@ func (cmd *Command) smConnEntry() {
 					}
 				}()
 			} else {
-				go func() {
-					cand := niaucchi2.NewClientCtx()
-					ctxid := make([]byte, 32)
-					natrium.RandBytes(ctxid)
+				getWire := func(ctxid []byte) (mconn *miniss.Socket, err error) {
 					rawconn, err := net.DialTimeout("tcp", xaxa.Addr, time.Second*10)
 					if err != nil {
 						log.Println("dial to", xaxa.Addr, err.Error())
@@ -95,9 +95,12 @@ func (cmd *Command) smConnEntry() {
 						rawconn.Close()
 						return
 					}
+					log.Println("cluttershirt to", xaxa.Addr, "okay")
+					// make the race fair
+					<-barr
 					// 0x00 for a negotiable protocol
 					oconn.Write([]byte{0x00})
-					mconn, err := miniss.Handshake(oconn, cmd.identity)
+					mconn, err = miniss.Handshake(oconn, cmd.identity)
 					if err != nil {
 						log.Println("miniss to", xaxa.Addr, err.Error())
 						oconn.Close()
@@ -118,6 +121,17 @@ func (cmd *Command) smConnEntry() {
 						return
 					}
 					log.Println("id to", xaxa.Addr, "okay")
+					return
+				}
+				go func() {
+					cand := niaucchi2.NewClientCtx()
+					ctxid := make([]byte, 32)
+					natrium.RandBytes(ctxid)
+					mconn, err := getWire(ctxid)
+					if err != nil {
+						log.Println("getConn to", xaxa.Addr, err.Error())
+						return
+					}
 					err = cand.Absorb(mconn)
 					if err != nil {
 						log.Println("absorb to", xaxa.Addr, err.Error())
@@ -133,6 +147,16 @@ func (cmd *Command) smConnEntry() {
 						cmd.stats.netinfo.prot = "cl-ni-2"
 						cmd.stats.Unlock()
 						log.Println(xaxa.Addr, "WINNER")
+						// fan out
+						FANOUT--
+						go func() {
+							for i := 0; i < FANOUT; i++ {
+								mconn, err := getWire(ctxid)
+								if err == nil {
+									cand.Absorb(mconn)
+								}
+							}
+						}()
 					case <-dedline:
 						log.Println(xaxa.Addr, "failed race")
 						cand.Tomb().Kill(io.ErrClosedPipe)

@@ -30,7 +30,11 @@ func (cmd *Command) smConnEntry() {
 	retline := make(chan *niaucchi2.Context)
 	dedline := make(chan bool)
 	// barrier to prevent the initial connection from ruining the race
-	barr := time.After(time.Second * 2)
+	barr := make(chan bool)
+	go func() {
+		time.Sleep(time.Second * 2)
+		close(barr)
+	}()
 	for exit, entries := range cmd.entryCache {
 		for _, xaxa := range entries {
 			exit := exit

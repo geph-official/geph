@@ -55,7 +55,7 @@ func (cmd *Command) manageOneCtx(uid string, nct *niaucchi2.Context) {
 				lblk.Unlock()
 				// olbal has what we need ATM
 				// decrement by olbal
-				nbal, err := cmd.decAccBalance(uid, (olbal/1000000)+1)
+				nbal, err := cmd.decAccBalance(uid, (olbal / 1000000))
 				if err != nil {
 					log.Println("error", err.Error())
 					nbal = 0

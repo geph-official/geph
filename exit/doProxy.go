@@ -38,6 +38,7 @@ func (cmd *Command) manageOneCtx(uid string, nct *niaucchi2.Context) {
 		defer lblk.Unlock()
 		lbal += dec
 		bal -= dec
+		log.Println(uid, "has", bal, "left")
 		if bal <= 0 {
 			return false
 		}

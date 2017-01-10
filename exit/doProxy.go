@@ -63,7 +63,7 @@ func (cmd *Command) manageOneCtx(uid string, nct *niaucchi2.Context) {
 				}
 				// update bal
 				lblk.Lock()
-				bal = nbal
+				bal = nbal * 1000000
 				lbal = 0
 				lblk.Unlock()
 			}

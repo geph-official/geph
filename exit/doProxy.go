@@ -4,10 +4,10 @@ import (
 	"encoding/base32"
 	"io"
 	"log"
-	"math/rand"
 	"net"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/time/rate"
 
@@ -26,29 +26,47 @@ func (cmd *Command) manageOneCtx(uid string, nct *niaucchi2.Context) {
 	} else {
 		log.Println(uid, "connected with", bal, "MiB left")
 	}
+	bal *= 1000000
 	limit := rate.NewLimiter(rate.Limit(cmd.bwLimit*1024), 512*1024)
 	harshlimit := rate.NewLimiter(rate.Limit(32*1024), 128*1024)
 	// little balance
 	lbal := 0
 	var lblk sync.Mutex
-	// consume bytes, returns true if succeeds, otherwise returns false and kills everything
+	// consume bytes, returns true if succeeds, otherwise returns false
 	consume := func(dec int) bool {
 		lblk.Lock()
 		defer lblk.Unlock()
-		lbal -= dec
-		if lbal <= 0 {
-			num := rand.Int()%10 + 5
-			bal, err := cmd.decAccBalance(uid, num)
-			if err != nil || bal == 0 {
-				return false
-			}
-			lbal += 1000 * 1000 * num
+		lbal += dec
+		bal -= dec
+		if bal <= 0 {
+			return false
 		}
 		return true
 	}
-	// at the very end, return the small balance
-	defer func() {
-		cmd.decAccBalance(uid, (-lbal/1000000)+1)
+	// periodically sync our balance with the global balance
+	go func() {
+		for {
+			select {
+			case <-nct.Tomb().Dying():
+				return
+			case <-time.After(time.Second * 10):
+				lblk.Lock()
+				olbal := lbal
+				lblk.Unlock()
+				// olbal has what we need ATM
+				// decrement by olbal
+				nbal, err := cmd.decAccBalance(uid, olbal*1000000+1)
+				if err != nil {
+					log.Println("error", err.Error())
+					nbal = 0
+				}
+				// update bal
+				lblk.Lock()
+				bal = nbal
+				lbal = 0
+				lblk.Unlock()
+			}
+		}
 	}()
 	// Accept loop
 	for {

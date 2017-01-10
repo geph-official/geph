@@ -96,9 +96,7 @@ func (sctx *subCtx) mainThread() (err error) {
 		}
 		switch newseg.Flag {
 		case flPing:
-			log.Println("niaucchi2: PING on", sctx.subid)
 			if sctx.parent.isClient {
-				log.Println("KICK")
 				select {
 				case sctx.parent.pingCbak <- true:
 				case <-sctx.death.Dying():
@@ -112,9 +110,7 @@ func (sctx *subCtx) mainThread() (err error) {
 				}()
 			}
 		case flAliv:
-			log.Println("niaucchi2: ALIV on", sctx.subid)
 		case flOpen:
-			log.Println("niaucchi2: OPEN", newseg.Sokid, "on", sctx.subid)
 			// We have to be a server
 			if sctx.parent.isClient {
 				log.Println("niaucchi2:", sctx.subid, "got nonsensical OPEN, dying")
@@ -163,7 +159,6 @@ func (sctx *subCtx) mainThread() (err error) {
 				return
 			}
 			if newseg.Flag == flIcwd {
-				log.Println("niaucchi2: ICWD", newseg.Sokid, newseg.Body[0], "on", sctx.subid)
 				for i := byte(0); i < newseg.Body[0]; i++ {
 					select {
 					case <-dest.sendwind:
@@ -176,7 +171,6 @@ func (sctx *subCtx) mainThread() (err error) {
 				}
 			} else {
 				if newseg.Flag == flClos {
-					log.Println("niaucchi2: socket", dest.sockid, "got CLOS, deregistering")
 					sctx.parent.tabLock.Lock()
 					delete(sctx.parent.sokTable, dest.sockid)
 					sctx.parent.tabLock.Unlock()

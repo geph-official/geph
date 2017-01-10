@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"io"
 	"log"
 	"net"
@@ -29,12 +30,6 @@ func (cmd *Command) smConnEntry() {
 
 	retline := make(chan *niaucchi2.Context)
 	dedline := make(chan bool)
-	// barrier to prevent the initial connection from ruining the race
-	barr := make(chan bool)
-	go func() {
-		time.Sleep(time.Second * 1)
-		close(barr)
-	}()
 	for exit, entries := range cmd.entryCache {
 		for _, xaxa := range entries {
 			exit := exit
@@ -63,11 +58,11 @@ func (cmd *Command) smConnEntry() {
 						rawconn.Close()
 						return
 					}
-					/*if natrium.CTCompare(mconn.RemotePK(), xaxa.ExitKey.ToECDH()) != 0 {
+					if natrium.CTCompare(mconn.RemotePK(), xaxa.ExitKey.ToECDH()) != 0 {
 						log.Println("miniss to", xaxa.Addr, "bad auth")
 						rawconn.Close()
 						return
-					}*/
+					}
 					mconn.Write([]byte{0x02})
 					// No ctxid for warpfront
 					cand := niaucchi2.NewClientCtx()
@@ -99,8 +94,6 @@ func (cmd *Command) smConnEntry() {
 						rawconn.Close()
 						return
 					}
-					// make the race fair
-					<-barr
 					// 0x00 for a negotiable protocol
 					oconn.Write([]byte{0x00})
 					mconn, err = miniss.Handshake(oconn, cmd.identity)
@@ -112,6 +105,7 @@ func (cmd *Command) smConnEntry() {
 					if natrium.CTCompare(mconn.RemotePK(), xaxa.ExitKey.ToECDH()) != 0 {
 						log.Println("miniss to", xaxa.Addr, "bad auth")
 						oconn.Close()
+						err = errors.New("wrong public key")
 						return
 					}
 					// 0x02
@@ -138,9 +132,19 @@ func (cmd *Command) smConnEntry() {
 						mconn.Close()
 						return
 					}
-					// for the first one, we send 50K back and forth twice to eliminate low-latency but congested links
-					cand.Ping(make([]byte, 50000))
-					cand.Ping(make([]byte, 50000))
+					// for the first one, we send 50K back and forth to eliminate low-latency but congested links
+					dun := make(chan bool)
+					go func() {
+						cand.Ping(make([]byte, 50000))
+						close(dun)
+					}()
+					select {
+					case <-dun:
+					case <-dedline:
+						log.Println(xaxa.Addr, "failed race")
+						cand.Tomb().Kill(io.ErrClosedPipe)
+						return
+					}
 					select {
 					case retline <- cand:
 						cmd.stats.Lock()
@@ -172,6 +176,7 @@ func (cmd *Command) smConnEntry() {
 	select {
 	case <-time.After(time.Second * 15):
 		log.Println("ConnEntry: failed to connect to anything within 15 seconds")
+		close(dedline)
 		cmd.smState = cmd.smClearCache
 		return
 	case ss := <-retline:

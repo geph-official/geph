@@ -55,7 +55,6 @@ func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool, limit, harsh
 	log.Println("gonna tun", string(addrbts))
 	// is it actually a DNS request?
 	if len(addrbts) > 4 && string(addrbts[:4]) == "dns:" {
-		log.Println("trying to look up host", string(addrbts[4:]))
 		// comma-separated array of addresses
 		addrs, zerr := net.LookupHost(string(addrbts[4:]))
 		if zerr != nil {
@@ -107,7 +106,7 @@ func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool, limit, harsh
 	go func() {
 		defer rmt.Close()
 		defer clnt.Close()
-		buf := make([]byte, 32768)
+		buf := make([]byte, 8192)
 		for {
 			n, err := rmt.Read(buf)
 			if err != nil {
@@ -125,7 +124,7 @@ func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool, limit, harsh
 			}
 		}
 	}()
-	buf := make([]byte, 32768)
+	buf := make([]byte, 8192)
 	for {
 		n, err := clnt.Read(buf)
 		if err != nil {

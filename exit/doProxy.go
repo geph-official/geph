@@ -48,7 +48,7 @@ func (cmd *Command) manageOneCtx(uid string, nct *niaucchi2.Context) {
 	}
 	// at the very end, return the small balance
 	defer func() {
-		cmd.decAccBalance(uid, -lbal/1000000)
+		cmd.decAccBalance(uid, (-lbal/1000000)+1)
 	}()
 	// Accept loop
 	for {
@@ -78,9 +78,7 @@ func (cmd *Command) doProxy() {
 			panic(err.Error())
 		}
 		go func() {
-			log.Println("accepted 2379")
 			io.ReadFull(wire, make([]byte, 1))
-			log.Println("read the zero byte")
 			// Handle MiniSS first
 			mwire, err := miniss.Handshake(wire, cmd.identity.ToECDH())
 			if err != nil {
@@ -91,7 +89,6 @@ func (cmd *Command) doProxy() {
 			uid := strings.ToLower(
 				base32.StdEncoding.EncodeToString(
 					natrium.SecureHash(pub, nil)[:10]))
-			log.Println("miniss finished")
 			// Next 33 bytes: 0x02, then ctxId
 			buf := make([]byte, 33)
 			_, err = io.ReadFull(mwire, buf)
@@ -104,7 +101,6 @@ func (cmd *Command) doProxy() {
 				return
 			}
 			ctkey := natrium.HexEncode(buf[1:])
-			log.Println("ctkey =", ctkey)
 			// Check the ctxTab nowx
 			ctxTabLok.Lock()
 			if ctxTab[ctkey] == nil {

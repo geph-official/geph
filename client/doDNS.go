@@ -44,6 +44,7 @@ func (cmd *Command) resolveName(name string) (ip string, err error) {
 	tmr := time.AfterFunc(time.Second*15, func() {
 		myss.Tomb().Kill(niaucchi2.ErrTimeout)
 	})
+	defer tmr.Stop()
 	blen := make([]byte, 1)
 	_, err = io.ReadFull(conn, blen)
 	if err != nil {
@@ -57,7 +58,6 @@ func (cmd *Command) resolveName(name string) (ip string, err error) {
 		return
 	}
 	ip = strings.Split(string(stuff), ",")[0]
-	tmr.Stop()
 	dnsCacheLock.Lock()
 	dnsCache[name] = &dnsCacheEntry{
 		response: ip,

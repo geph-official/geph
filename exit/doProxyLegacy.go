@@ -38,7 +38,7 @@ func (cmd *Command) doProxyLegacy() {
 			if err != nil {
 				log.Println("error authenticating user", uid, ":", err)
 			} else {
-				log.Println(uid, "connected with", bal, "MiB left")
+				log.Println(uid, "connected with", bal, "MiB left (legacy)")
 			}
 			limit := rate.NewLimiter(rate.Limit(cmd.bwLimit*1024), 512*1024)
 			harshlimit := rate.NewLimiter(rate.Limit(32*1024), 128*1024)

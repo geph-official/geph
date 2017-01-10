@@ -31,7 +31,6 @@ func (cmd *Command) filterDest(addr string) bool {
 	// split host and port
 	host, portstr, err := net.SplitHostPort(addr)
 	if host == "binder.geph.io" {
-		log.Println("ACCEPTING", addr, "due to binder")
 		return true
 	}
 	if !strings.Contains(host, ".") ||
@@ -54,13 +53,11 @@ func (cmd *Command) filterDest(addr string) bool {
 	ip := net.ParseIP(host)
 	if len(ip) == 0 {
 		if cmd.geodbloc == "" && addr != cGoogleDNS {
-			log.Println("ACCEPTING", addr)
 			return true
 		}
 		// otherwise, resolve through the tunnel
 		r, e := cmd.resolveName(host)
 		if e != nil {
-			log.Println("ACCEPTING", addr, "to be safe, but host is unresolvable")
 			return true
 		}
 		ip = net.ParseIP(r)
@@ -82,13 +79,9 @@ func (cmd *Command) filterDest(addr string) bool {
 				return false
 			}
 		}
-		if addr != cGoogleDNS { // reduce log spam
-			log.Println("ACCEPTING", addr, ip.String(), ctry)
-		}
 		return true
 	}
 	if addr != cGoogleDNS {
-		log.Println("ACCEPTING", addr)
 		return true
 	}
 	return true

@@ -92,8 +92,9 @@ func (ctx *Context) Tunnel() (conn io.ReadWriteCloser, err error) {
 	// select a socketID
 	var sokid socketID
 	for i := socketID(1); i < 65535; i++ {
-		if ctx.sokTable[i] == nil {
-			sokid = i
+		rd := i
+		if ctx.sokTable[rd] == nil {
+			sokid = rd
 			break
 		}
 	}

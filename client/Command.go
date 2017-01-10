@@ -23,7 +23,7 @@ import (
 	"github.com/google/subcommands"
 
 	// SQLite3
-	_ "github.com/mattn/go-sqlite3"
+	_ "gopkg.in/mattn/go-sqlite3.v1"
 
 	// pprof
 	_ "net/http/pprof"

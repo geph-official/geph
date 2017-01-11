@@ -91,8 +91,8 @@ func (ctx *Context) Tunnel() (conn io.ReadWriteCloser, err error) {
 	sctx := cands[rand.Int()%len(cands)]
 	// select a socketID
 	var sokid socketID
-	for i := socketID(1); i < 65535; i++ {
-		rd := i
+	for {
+		rd := socketID(rand.Int() % 65536)
 		if ctx.sokTable[rd] == nil {
 			sokid = rd
 			break

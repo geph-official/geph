@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/rand"
 	"sync"
-	"time"
 
 	"github.com/lunixbochs/struc"
 
@@ -43,15 +42,15 @@ func (sok *socket) Close() (err error) {
 
 // Write writes from a buffer.
 func (sok *socket) Write(p []byte) (n int, err error) {
-	maxKbs := 8
-	if len(p) > maxKbs*1024 {
+	mlen := 8192
+	if len(p) > mlen {
 		var fn int
-		fn, err = sok.realWrite(p[:maxKbs*1024])
+		fn, err = sok.realWrite(p[:mlen])
 		if err != nil {
 			return
 		}
 		var rn int
-		rn, err = sok.Write(p[maxKbs*1024:])
+		rn, err = sok.Write(p[mlen:])
 		if err != nil {
 			return
 		}
@@ -73,11 +72,43 @@ func (sok *socket) realWrite(p []byte) (n int, err error) {
 		err = sok.death.Err()
 		return
 	}
-	sok.parent.wire.SetWriteDeadline(time.Now().Add(time.Second * 5))
-	err = struc.Pack(sok.parent.wire, &segment{Flag: flData,
-		Sokid: uint16(sok.sockid),
-		Body:  p})
-	sok.parent.wire.SetWriteDeadline(time.Time{})
+	// calculate a good value for pad
+	var pad int
+	if len(p) > 4096 {
+		// no overhead for full-8192 payloads
+		pad = 8192 + 1 + 2 + 2
+	} else if len(p) > 2048 {
+		pad = 4096
+	} else if len(p) > 1024 {
+		pad = 2048
+	} else if len(p) > 512 {
+		pad = 1024 + rand.Int()%512
+	} else if len(p) > 256 {
+		pad = 512 + rand.Int()%256
+	} else if len(p) > 128 {
+		pad = 256 + rand.Int()%128
+	} else {
+		pad = 128 + rand.Int()%64
+	}
+	// calculate how many bytes to add to make the write be pad
+	fpadlen := pad
+	pad -= len(p)          // decrease length of p
+	pad -= (1 + 2 + 2) * 2 // overhead of two packets
+	if pad <= 0 {
+		err = struc.Pack(sok.parent.wire, &segment{Flag: flData,
+			Sokid: uint16(sok.sockid),
+			Body:  p})
+	} else {
+		buf := new(bytes.Buffer)
+		struc.Pack(buf, &segment{Flag: flData,
+			Sokid: uint16(sok.sockid), Body: p})
+		struc.Pack(buf, &segment{Flag: flAliv,
+			Body: make([]byte, pad)})
+		if buf.Len() != fpadlen {
+			panic("didn't reach the correct padding length")
+		}
+		_, err = sok.parent.wire.Write(buf.Bytes())
+	}
 	if err != nil {
 		return
 	}
@@ -109,8 +140,6 @@ func (sok *socket) Read(p []byte) (n int, err error) {
 			if sok.recvcount < uint8(rand.Int()%64+32) {
 				const COUNT = 64
 				sok.recvcount += COUNT
-				log.Println("niaucchi2: boosting recv window in",
-					sok.sockid, "by 128 to", sok.recvcount)
 				// tell the other side too
 				go func() {
 					sok.wlock.Lock()

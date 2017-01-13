@@ -12,9 +12,6 @@ import (
 )
 
 func (cmd *Command) getEntryNodes(exits map[string][]byte) map[string][]entryInfo {
-	log.Println("** => QueryExits **")
-	defer log.Println("** <= QueryExits **")
-
 	entries := make(map[string][]entryInfo)
 	var err error
 	for ext, kee := range exits {

@@ -1,18 +1,19 @@
 package client
 
 import (
-	"errors"
+	"io"
 	"log"
 	"net"
+	"time"
 
 	"golang.org/x/net/proxy"
 
 	"github.com/ProjectNiwl/tinysocks"
-	"github.com/bunsim/geph/niaucchi"
+	"github.com/bunsim/geph/niaucchi2"
 )
 
 // smSteadyState represents the steady state of the client.
-// => ConnEntry when the network fails.
+// => FindEntry when the network fails.
 func (cmd *Command) smSteadyState() {
 	log.Println("** => SteadyState **")
 	defer log.Println("** <= SteadyState **")
@@ -25,14 +26,19 @@ func (cmd *Command) smSteadyState() {
 		cmd.stats.status = "connecting"
 		cmd.stats.Unlock()
 	}()
-	// do the account verification in parallel, tied to currTunn's tomb
-	cmd.currTunn.Tomb().Go(cmd.verifyAccount)
+	// do the account verification in parallel
+	go cmd.verifyAccount()
 	// wait until death
-	reason := cmd.currTunn.Tomb().Wait()
-	log.Println("network failed in steady state:", reason.Error())
-	// clear everything and go to ConnEntry
+	<-cmd.currTunn.Tomb().Dying()
+	reason := cmd.currTunn.Tomb().Err()
+	if reason == nil {
+		log.Println("WTF??? Null??")
+	} else {
+		log.Println("network failed in steady state:", reason.Error())
+	}
+	// clear everything and go to FindEntry
 	cmd.currTunn = nil
-	cmd.smState = cmd.smConnEntry
+	cmd.smState = cmd.smFindEntry
 }
 
 func (cmd *Command) dialTun(dest string) (conn net.Conn, err error) {
@@ -43,21 +49,42 @@ func (cmd *Command) dialTun(dest string) (conn net.Conn, err error) {
 	return sks.Dial("tcp", dest)
 }
 
-func (cmd *Command) dialTunRaw(dest string) (conn net.Conn, err error) {
+func (cmd *Command) dialTunRaw(dest string) (conn io.ReadWriteCloser, code byte) {
+	var err error
 	if !cmd.filterDest(dest) {
-		return net.Dial("tcp", dest)
-	}
-	var myss *niaucchi.Substrate
-	myss = cmd.currTunn
-	if myss == nil {
-		err = errors.New("null")
+		conn, err = net.Dial("tcp", dest)
+		if err != nil {
+			code = 0x03
+		}
 		return
 	}
-	conn, err = myss.OpenConn()
+	var myss *niaucchi2.Context
+	myss = cmd.currTunn
+	if myss == nil {
+		code = 0x03
+		return
+	}
+	conn, err = myss.Tunnel()
 	if err != nil {
+		code = 0x03
 		return
 	}
 	conn.Write(append([]byte{byte(len(dest))}, []byte(dest)...))
+	// wait for the status code
+	tmr := time.AfterFunc(time.Second*15, func() {
+		myss.Tomb().Kill(niaucchi2.ErrTimeout)
+	})
+	b := make([]byte, 1)
+	_, err = io.ReadFull(conn, b)
+	if err != nil {
+		conn.Close()
+		code = 0x03
+	}
+	code = b[0]
+	if code != 0x00 {
+		conn.Close()
+	}
+	tmr.Stop()
 	return
 }
 
@@ -73,18 +100,21 @@ func (cmd *Command) doSocks(lsnr net.Listener) {
 			if err != nil {
 				return
 			}
-			conn, err := cmd.dialTunRaw(dest)
-			if err != nil {
-				tinysocks.CompleteRequest(0x03, clnt)
+			conn, code := cmd.dialTunRaw(dest)
+			if code != 0x00 {
+				tinysocks.CompleteRequest(code, clnt)
 				return
 			}
+			defer conn.Close()
 			tinysocks.CompleteRequest(0x00, clnt)
 			// forward
 			cmd.stats.Lock()
+			log.Println("OPEN", dest)
 			cmd.stats.netinfo.tuns[clnt.RemoteAddr().String()] = dest
 			cmd.stats.Unlock()
 			defer func() {
 				cmd.stats.Lock()
+				log.Println("CLOS", dest)
 				delete(cmd.stats.netinfo.tuns, clnt.RemoteAddr().String())
 				cmd.stats.Unlock()
 			}()

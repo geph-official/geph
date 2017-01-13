@@ -11,16 +11,10 @@ import (
 	"gopkg.in/bunsim/natrium.v1"
 )
 
-// smQueryExits is the QueryExits state.
-// => FindEntry if successful
-// => QueryBinder if unsuccessful
-func (cmd *Command) smQueryExits() {
-	log.Println("** => QueryExits **")
-	defer log.Println("** <= QueryExits **")
-
+func (cmd *Command) getEntryNodes(exits map[string][]byte) map[string][]entryInfo {
 	entries := make(map[string][]entryInfo)
 	var err error
-	for ext, kee := range cmd.exitCache {
+	for ext, kee := range exits {
 		req, _ := http.NewRequest("POST",
 			fmt.Sprintf("https://%v/exits/%v:8081/get-nodes", cFRONT, ext), nil)
 		req.Host = cHOST
@@ -31,8 +25,9 @@ func (cmd *Command) smQueryExits() {
 			continue
 		}
 		var lol struct {
-			Expires string
-			Nodes   map[string][]byte
+			Expires  string
+			Nodes    map[string][]byte
+			Fallback map[string]string
 		}
 		buf := new(bytes.Buffer)
 		io.Copy(buf, resp.Body)
@@ -67,15 +62,13 @@ func (cmd *Command) smQueryExits() {
 				ExitKey: natrium.EdDSAPublic(kee),
 			})
 		}
+		if lol.Fallback["Front"] != "" {
+			entries[ext] = append(entries[ext], entryInfo{
+				Addr:    "warpfront",
+				Cookie:  []byte(lol.Fallback["Front"] + ";" + lol.Fallback["Host"]),
+				ExitKey: natrium.EdDSAPublic(kee),
+			})
+		}
 	}
-	if len(entries) == 0 {
-		log.Println("QueryExits: not a single entry node discovered")
-		cmd.exitCache = nil
-		cmd.smState = cmd.smQueryBinder
-		return
-	}
-
-	cmd.entryCache = entries
-	cmd.smState = cmd.smFindEntry
-	return
+	return entries
 }

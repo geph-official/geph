@@ -23,11 +23,27 @@ func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest *string) {
 				return
 			}
 			defer clnt.Close()
-			remote, err := net.DialTimeout("tcp", fmt.Sprintf("%v:2378", *dest), time.Second*2)
+			// Read 1 byte to determine version
+			lol := make([]byte, 1)
+			_, err = io.ReadFull(clnt, lol)
 			if err != nil {
-				log.Println("WARNING: failed to forward to", *dest, ":", err.Error())
 				return
 			}
+			var remote net.Conn
+			if lol[0] != 0 {
+				remote, err = net.DialTimeout("tcp", fmt.Sprintf("%v:2378", *dest), time.Second*10)
+				if err != nil {
+					log.Println("WARNING: failed to forward to", *dest, ":", err.Error())
+					return
+				}
+			} else {
+				remote, err = net.DialTimeout("tcp", fmt.Sprintf("%v:2379", *dest), time.Second*10)
+				if err != nil {
+					log.Println("WARNING: failed to forward to", *dest, ":", err.Error())
+					return
+				}
+			}
+			remote.Write(lol)
 			defer remote.Close()
 			go func() {
 				defer remote.Close()

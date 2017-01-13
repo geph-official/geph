@@ -23,6 +23,9 @@ type Command struct {
 	bwLimit int
 	pgURL   string
 
+	wfFront string
+	wfHost  string
+
 	identity natrium.EdDSAPrivate
 	edb      *entryDB
 
@@ -44,6 +47,9 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.pgURL, "pgURL", "127.0.0.1:15432",
 		"location of the PostgreSQL account database")
 	f.IntVar(&cmd.bwLimit, "bwLimit", 600, "bandwidth limit for every session (KiB/s)")
+
+	f.StringVar(&cmd.wfFront, "wfFront", "", "front for warpfront")
+	f.StringVar(&cmd.wfHost, "wfHost", "", "host for warpfront")
 }
 
 // Execute executes the exit subcommand.
@@ -71,7 +77,11 @@ func (cmd *Command) Execute(_ context.Context,
 	cmd.pgdb = db
 
 	// run the proxy
+	go cmd.doProxyLegacy()
 	go cmd.doProxy()
+	if cmd.wfFront != "" {
+		go cmd.doFront()
+	}
 
 	// run the exit API
 	http.HandleFunc("/update-node", cmd.handUpdateNode)

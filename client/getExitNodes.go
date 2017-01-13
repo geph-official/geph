@@ -13,24 +13,6 @@ import (
 	"gopkg.in/bunsim/natrium.v1"
 )
 
-// smQueryBinder is the QueryBinder state.
-// => QueryExits if successful
-// => QueryBinder if fails
-func (cmd *Command) smQueryBinder() {
-	log.Println("** => QueryBinder **")
-	defer log.Println("** <= QueryBinder **")
-	nds, err := cmd.getExitNodes()
-	if err != nil {
-		log.Println("QueryBinder:", err.Error())
-		cmd.smState = cmd.smQueryBinder
-		time.Sleep(time.Second)
-		return
-	}
-	cmd.exitCache = nds
-	cmd.smState = cmd.smQueryExits
-	return
-}
-
 func (cmd *Command) getExitNodes() (nds map[string][]byte, err error) {
 	// request the data
 	req, _ := http.NewRequest("GET", fmt.Sprintf("https://%v/exit-info", cFRONT), nil)

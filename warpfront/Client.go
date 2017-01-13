@@ -51,9 +51,6 @@ func Connect(client *http.Client, frontHost string, realHost string) (net.Conn, 
 
 	atomic.AddInt64(&clGetCount, 1)
 	atomic.AddInt64(&clConnCount, 1)
-	cid := clConnCount
-	log.Println("warpfront: GET (init) count", clGetCount, cid)
-
 	sesh := newSession()
 
 	go func() {
@@ -61,7 +58,7 @@ func Connect(client *http.Client, frontHost string, realHost string) (net.Conn, 
 		// poll and stuff into rx
 		for i := 0; ; i++ {
 			atomic.AddInt64(&clGetCount, 1)
-			log.Println("warpfront: GET count", clGetCount, cid)
+			//log.Println("warpfront: GET count", clGetCount, cid)
 			resp, err := getWithHost(client,
 				fmt.Sprintf("%v/%x?serial=%v", frontHost, num, i),
 				realHost)
@@ -82,7 +79,7 @@ func Connect(client *http.Client, frontHost string, realHost string) (net.Conn, 
 					return
 				}
 				if binary.BigEndian.Uint32(lbts) == 0 {
-					log.Println("warpfront: client got continuation signal, looping around")
+					//log.Println("warpfront: client got continuation signal, looping around")
 					resp.Body.Close()
 					goto OUT
 				}
@@ -113,7 +110,7 @@ func Connect(client *http.Client, frontHost string, realHost string) (net.Conn, 
 			select {
 			case bts := <-sesh.tx:
 				atomic.AddInt64(&clGetCount, 1)
-				log.Println("warpfront: POST count", clGetCount, cid)
+				//log.Println("warpfront: POST count", clGetCount, cid)
 				resp, err := postWithHost(client,
 					fmt.Sprintf("%v/%x?serial=%v", frontHost, num, i),
 					realHost,

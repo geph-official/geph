@@ -60,10 +60,9 @@ type Command struct {
 	cachedir  string
 	powersave bool
 
-	cdb        *sql.DB
-	exitCache  map[string][]byte
-	entryCache map[string][]entryInfo
-	currTunn   *niaucchi2.Context
+	cdb      *sql.DB
+	ecache   entryCache
+	currTunn *niaucchi2.Context
 
 	geodb    geoDB
 	whitegeo []string
@@ -176,29 +175,13 @@ func (cmd *Command) Execute(_ context.Context,
 		}
 		// just a simple key-value pair lol
 		cmd.cdb.Exec("CREATE TABLE IF NOT EXISTS main (k UNIQUE NOT NULL, v)")
-	}
-	// Try to read the identity from the cache first
-	if cmd.cdb != nil {
-		row := cmd.cdb.QueryRow("SELECT v FROM main WHERE k = 'sec.identity'")
-		var lol []byte
-		err := row.Scan(&lol)
-		if err != nil {
-			log.Println("cache: cannot read sec.identity:", err.Error())
-		} else {
-			cmd.identity = lol
-			log.Println("identity (cache):", touid(cmd.identity.PublicKey()))
-		}
+		cmd.ecache = &sqliteEntryCache{cmd.cdb}
+	} else {
+		cmd.ecache = &memEntryCache{}
 	}
 	// Derive the identity
 	if cmd.identity == nil {
 		cmd.identity = common.DeriveKey(cmd.uname, cmd.pwd).ToECDH()
-		// Place identity in cache if available
-		if cmd.cdb != nil {
-			_, err := cmd.cdb.Exec("INSERT INTO main VALUES ('sec.identity', $1)", []byte(cmd.identity))
-			if err != nil {
-				log.Println("cache: cannot store sec.identity:", err.Error())
-			}
-		}
 		log.Println("identity (deriv):", touid(cmd.identity.PublicKey()))
 	}
 	// Start the DNS daemon which should never stop

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -147,25 +146,23 @@ func (srv *Server) ServeHTTP(wr http.ResponseWriter, rq *http.Request) {
 				_, err := wr.Write(append(buf, bts...))
 				if err != nil {
 					srv.destroySession(key)
-					log.Println("GET done since we can't write")
 					return
 				}
 				ctr += len(bts)
 				wr.(http.Flusher).Flush()
 			case <-time.After(time.Second * 60):
-				log.Println("GET done since ran out of time")
 				wr.Write(contbuf)
 				wr.(http.Flusher).Flush()
+				time.Sleep(time.Second)
 				return
 			case <-ded:
 				srv.destroySession(key)
-				log.Println("GET done since we randomly died")
 				return
 			}
 		}
 		wr.Write(contbuf)
 		wr.(http.Flusher).Flush()
-		log.Println("GET done since ran out of ctr")
+		time.Sleep(time.Second)
 	case "POST":
 		pkrd := new(bytes.Buffer)
 		_, err := io.Copy(pkrd, rq.Body)

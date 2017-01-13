@@ -30,7 +30,7 @@ func (cmd *Command) smConnEntry() {
 
 	retline := make(chan *niaucchi2.Context)
 	dedline := make(chan bool)
-	for exit, entries := range cmd.entryCache {
+	for exit, entries := range cmd.ecache.GetEntries() {
 		for _, xaxa := range entries {
 			exit := exit
 			xaxa := xaxa
@@ -70,8 +70,6 @@ func (cmd *Command) smConnEntry() {
 					select {
 					case retline <- cand:
 						cmd.stats.Lock()
-						cmd.stats.netinfo.entry = natrium.HexEncode(
-							natrium.SecureHash(xaxa.Cookie, nil)[:8])
 						cmd.stats.netinfo.exit = exit
 						cmd.stats.netinfo.prot = "wf-ni-2"
 						cmd.stats.Unlock()
@@ -177,25 +175,12 @@ func (cmd *Command) smConnEntry() {
 	case <-time.After(time.Second * 15):
 		log.Println("ConnEntry: failed to connect to anything within 15 seconds")
 		close(dedline)
-		cmd.smState = cmd.smClearCache
+		cmd.smState = cmd.smFindEntry
 		return
 	case ss := <-retline:
 		close(dedline)
 		cmd.currTunn = ss
 		cmd.smState = cmd.smSteadyState
 		return
-	}
-}
-
-// smClearCache clears the cache and goes back to the entry point.
-// => FindEntry always
-func (cmd *Command) smClearCache() {
-	log.Println("** => ClearCache **")
-	defer log.Println("** <= ClearCache **")
-	cmd.entryCache = nil
-	cmd.exitCache = nil
-	cmd.smState = cmd.smFindEntry
-	if cmd.cdb != nil {
-		cmd.cdb.Exec("DELETE FROM main WHERE k='bst.entries'")
 	}
 }

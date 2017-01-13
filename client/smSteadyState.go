@@ -13,7 +13,7 @@ import (
 )
 
 // smSteadyState represents the steady state of the client.
-// => ConnEntry when the network fails.
+// => FindEntry when the network fails.
 func (cmd *Command) smSteadyState() {
 	log.Println("** => SteadyState **")
 	defer log.Println("** <= SteadyState **")
@@ -36,9 +36,9 @@ func (cmd *Command) smSteadyState() {
 	} else {
 		log.Println("network failed in steady state:", reason.Error())
 	}
-	// clear everything and go to ConnEntry
+	// clear everything and go to FindEntry
 	cmd.currTunn = nil
-	cmd.smState = cmd.smConnEntry
+	cmd.smState = cmd.smFindEntry
 }
 
 func (cmd *Command) dialTun(dest string) (conn net.Conn, err error) {
@@ -109,10 +109,12 @@ func (cmd *Command) doSocks(lsnr net.Listener) {
 			tinysocks.CompleteRequest(0x00, clnt)
 			// forward
 			cmd.stats.Lock()
+			log.Println("OPEN", dest)
 			cmd.stats.netinfo.tuns[clnt.RemoteAddr().String()] = dest
 			cmd.stats.Unlock()
 			defer func() {
 				cmd.stats.Lock()
+				log.Println("CLOS", dest)
 				delete(cmd.stats.netinfo.tuns, clnt.RemoteAddr().String())
 				cmd.stats.Unlock()
 			}()

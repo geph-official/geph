@@ -3,7 +3,6 @@ package warpfront
 import (
 	"bytes"
 	"io"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -43,7 +42,6 @@ func (rcn *rwcNagle) thrFlush() {
 			dline = ndl
 		case <-time.After(dline.Sub(time.Now())):
 			rcn.Lock()
-			log.Println("rwcNagle flushing", rcn.buffer.Len(), "bytes")
 			_, rcn.err = io.Copy(rcn.transport, rcn.buffer)
 			if rcn.err != nil {
 				rcn.transport.Close()

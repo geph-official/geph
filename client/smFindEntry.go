@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"log"
 	"time"
 )
@@ -12,33 +11,37 @@ import (
 func (cmd *Command) smFindEntry() {
 	log.Println("** => FindEntry **")
 	defer log.Println("** <= FindEntry **")
-	// attempt to read cache entries from disk
-	if cmd.cdb != nil {
-		var bts []byte
-		err := cmd.cdb.QueryRow("SELECT v FROM main WHERE k='bst.entries'").Scan(&bts)
-		if err == nil {
-			var expunix int64
-			err = cmd.cdb.QueryRow("SELECT v FROM main WHERE k='bst.expires'").Scan(&expunix)
-			if err == nil && time.Unix(expunix, 0).After(time.Now()) {
-				json.Unmarshal(bts, &cmd.entryCache)
-			}
+	// is the cache empty
+	if cmd.ecache.GetEntries() == nil {
+		exits, err := cmd.getExitNodes()
+		if err != nil {
+			time.Sleep(time.Second)
+			cmd.smState = cmd.smFindEntry
+			return
 		}
-	}
-
-	if cmd.entryCache == nil {
-		cmd.smState = cmd.smQueryBinder
-	} else {
-		// save cache entries for next time
-		if cmd.cdb != nil {
-			bts, err := json.Marshal(&cmd.entryCache)
-			if err != nil {
-				panic(err.Error())
-			}
-			cmd.cdb.Exec("INSERT OR REPLACE INTO main VALUES('bst.entries', $1)", bts)
-			// max of 24 hours
-			cmd.cdb.Exec("INSERT OR REPLACE INTO main VALUES('bst.expires', $1)",
-				time.Now().Add(time.Hour).Unix())
+		entries := cmd.getEntryNodes(exits)
+		if len(entries) == 0 {
+			log.Println("no entries found!")
+			time.Sleep(time.Second)
+			cmd.smState = cmd.smFindEntry
+			return
 		}
+		cmd.ecache.SetEntries(entries)
 		cmd.smState = cmd.smConnEntry
+		return
 	}
+	// asynchronously update the cache anyway
+	go func() {
+		exits, err := cmd.getExitNodes()
+		if err != nil {
+			return
+		}
+		entries := cmd.getEntryNodes(exits)
+		if len(entries) == 0 {
+			return
+		}
+		cmd.ecache.SetEntries(entries)
+	}()
+	cmd.smState = cmd.smConnEntry
+	return
 }

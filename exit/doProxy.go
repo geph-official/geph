@@ -53,18 +53,20 @@ func (cmd *Command) manageOneCtx(uid string, nct *niaucchi2.Context) {
 				lblk.Lock()
 				olbal := lbal
 				lblk.Unlock()
-				// olbal has what we need ATM
-				// decrement by olbal
-				nbal, err := cmd.decAccBalance(uid, (olbal / 1000000))
-				if err != nil {
-					log.Println("error", err.Error())
-					nbal = 0
+				if olbal > 500000 {
+					// olbal has what we need ATM
+					// decrement by olbal
+					nbal, err := cmd.decAccBalance(uid, (olbal / 1000000))
+					if err != nil {
+						log.Println("error", err.Error())
+						nbal = 0
+					}
+					// update bal
+					lblk.Lock()
+					bal = nbal * 1000000
+					lbal = 0
+					lblk.Unlock()
 				}
-				// update bal
-				lblk.Lock()
-				bal = nbal * 1000000
-				lbal = 0
-				lblk.Unlock()
 			}
 		}
 	}()

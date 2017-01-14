@@ -4,6 +4,7 @@ import (
 	"encoding/base32"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"strings"
 	"sync"
@@ -53,13 +54,21 @@ func (cmd *Command) manageOneCtx(uid string, nct *niaucchi2.Context) {
 				lblk.Lock()
 				olbal := lbal
 				lblk.Unlock()
-				if olbal > 500000 {
+				if olbal > 1000000 {
 					// olbal has what we need ATM
 					// decrement by olbal
 					nbal, err := cmd.decAccBalance(uid, (olbal / 1000000))
 					if err != nil {
 						log.Println("error", err.Error())
 						nbal = 0
+					}
+					// then possibly decrement by another MiB, dithered
+					if rand.Float64() < float64(olbal%1000000)/1000000.0 {
+						nbal, err = cmd.decAccBalance(uid, (olbal / 1000000))
+						if err != nil {
+							log.Println("error", err.Error())
+							nbal = 0
+						}
 					}
 					// update bal
 					lblk.Lock()

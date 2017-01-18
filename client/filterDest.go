@@ -57,7 +57,7 @@ func (cmd *Command) filterDest(addr string) bool {
 		}
 		// otherwise, resolve through the tunnel
 		r, e := cmd.resolveName(host)
-		if e != nil {
+		if e != nil || len(ip) == 0 {
 			return true
 		}
 		ip = net.ParseIP(r)

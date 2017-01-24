@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/net/proxy"
 
-	"github.com/ProjectNiwl/tinysocks"
+	"github.com/niwl/geph/tinysocks"
 	"github.com/niwl/geph/niaucchi2"
 )
 

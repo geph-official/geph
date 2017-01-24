@@ -12,8 +12,8 @@ import (
 	"gopkg.in/bunsim/natrium.v1"
 
 	"github.com/bunsim/cluttershirt"
-	"github.com/bunsim/geph/niaucchi2"
-	"github.com/bunsim/geph/warpfront"
+	"github.com/niwl/geph/niaucchi2"
+	"github.com/niwl/geph/warpfront"
 )
 
 // smConnEntry is the ConnEntry state, where a connection to some entry node is established.

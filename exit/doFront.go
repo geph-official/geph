@@ -11,8 +11,8 @@ import (
 	miniss "gopkg.in/bunsim/miniss.v1"
 	natrium "gopkg.in/bunsim/natrium.v1"
 
-	"github.com/bunsim/geph/niaucchi2"
-	"github.com/bunsim/geph/warpfront"
+	"github.com/niwl/geph/niaucchi2"
+	"github.com/niwl/geph/warpfront"
 )
 
 func (cmd *Command) doFront() {

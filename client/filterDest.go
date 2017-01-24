@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bunsim/geph/common"
+	"github.com/niwl/geph/common"
 )
 
 const cGoogleDNS = "8.8.8.8:53"

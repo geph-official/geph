@@ -133,7 +133,9 @@ func (cmd *Command) smConnEntry() {
 					// for the first one, we send 50K back and forth to eliminate low-latency but congested links
 					dun := make(chan bool)
 					go func() {
-						cand.Ping(make([]byte, 50000))
+						for i := 0; i < 5; i++ {
+							cand.Ping(make([]byte, 10000))
+						}
 						close(dun)
 					}()
 					select {

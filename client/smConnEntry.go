@@ -130,13 +130,15 @@ func (cmd *Command) smConnEntry() {
 						mconn.Close()
 						return
 					}
-					// for the first one, we send 100k back and forth to eliminate low-latency but congested links
+					// for the first one, we send stuff back and forth to eliminate low-latency but congested links
 					dun := make(chan bool)
 					go func() {
+						//dur, _ := cand.Ping(make([]byte, 32000))
+						//log.Println("32k to", xaxa.Addr, dur)
 						var lol time.Duration
 						var i int
-						for ; i < 10; i++ {
-							dur, err := cand.Ping(make([]byte, 10000))
+						for ; i < 25; i++ {
+							dur, err := cand.Ping(make([]byte, 2000))
 							if err != nil {
 								break
 							}

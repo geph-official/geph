@@ -138,7 +138,7 @@ func (cmd *Command) smConnEntry() {
 						var lol time.Duration
 						var i int
 						for ; i < 2; i++ {
-							dur, err := cand.Ping(50) // get 50K
+							dur, err := cand.Ping(49) // get 50K
 							if err != nil {
 								break
 							}

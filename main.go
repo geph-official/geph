@@ -7,11 +7,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/bunsim/geph/binder"
-	"github.com/bunsim/geph/client"
-	"github.com/bunsim/geph/entry"
-	"github.com/bunsim/geph/exit"
-	"github.com/bunsim/geph/proxbinder"
+	"github.com/niwl/geph/binder"
+	"github.com/niwl/geph/client"
+	"github.com/niwl/geph/entry"
+	"github.com/niwl/geph/exit"
+	"github.com/niwl/geph/proxbinder"
 	"github.com/google/subcommands"
 	"gopkg.in/bunsim/natrium.v1"
 )

@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/net/proxy"
 
-	"github.com/ProjectNiwl/tinysocks"
-	"github.com/bunsim/geph/niaucchi2"
+	"github.com/niwl/geph/tinysocks"
+	"github.com/niwl/geph/niaucchi2"
 )
 
 // smSteadyState represents the steady state of the client.

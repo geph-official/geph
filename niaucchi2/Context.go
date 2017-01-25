@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
-	"log"
 	"math/rand"
 	"net"
 	"sync"
@@ -148,7 +147,6 @@ func (ctx *Context) Absorb(conn net.Conn) (err error) {
 		}
 		// Send over whatever we selected
 		conn.Write([]byte{byte(subid / 256), byte(subid % 256)})
-		log.Println("niaucchi2: Context absorbed", subid, "as client")
 	} else {
 		// Read the subid from the network
 		bts := make([]byte, 2)
@@ -161,7 +159,6 @@ func (ctx *Context) Absorb(conn net.Conn) (err error) {
 		// Grab the tabLock after we read
 		ctx.tabLock.Lock()
 		defer ctx.tabLock.Unlock()
-		log.Println("niaucchi2: Context absorbed", subid, "as server")
 	}
 	// Construct a subCtx wrapping this connection
 	nsc := &subCtx{

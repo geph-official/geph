@@ -17,8 +17,8 @@ import (
 
 	"context"
 
-	"github.com/bunsim/geph/common"
-	"github.com/bunsim/geph/niaucchi2"
+	"github.com/niwl/geph/common"
+	"github.com/niwl/geph/niaucchi2"
 	"github.com/bunsim/goproxy"
 	"github.com/google/subcommands"
 

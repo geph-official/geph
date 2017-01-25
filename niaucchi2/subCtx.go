@@ -87,7 +87,6 @@ func (sctx *subCtx) mainThread() (err error) {
 		err = struc.Unpack(sctx.wire, &newseg)
 		if err != nil {
 			sctx.parent.death.Kill(err)
-			log.Println("niaucchi2:", sctx.subid, "died due to wire:", err.Error())
 			return
 		}
 		select {

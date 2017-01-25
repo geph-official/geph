@@ -11,9 +11,9 @@ import (
 	"gopkg.in/bunsim/miniss.v1"
 	"gopkg.in/bunsim/natrium.v1"
 
-	"github.com/bunsim/cluttershirt"
 	"github.com/niwl/geph/niaucchi2"
 	"github.com/niwl/geph/warpfront"
+	"gopkg.in/bunsim/cluttershirt.v1"
 )
 
 // smConnEntry is the ConnEntry state, where a connection to some entry node is established.
@@ -130,19 +130,23 @@ func (cmd *Command) smConnEntry() {
 						mconn.Close()
 						return
 					}
-					// for the first one, we send 5k back and forth to eliminate low-latency but congested links
+					// for the first one, we send stuff back and forth to eliminate low-latency but congested links
 					dun := make(chan bool)
 					go func() {
+						//dur, _ := cand.Ping(make([]byte, 32000))
+						//log.Println("32k to", xaxa.Addr, dur)
 						var lol time.Duration
 						var i int
-						for ; i < 10; i++ {
-							dur, err := cand.Ping(make([]byte, 1024))
+						for ; i < 2; i++ {
+							dur, err := cand.Ping(49) // get 50K
 							if err != nil {
 								break
 							}
 							lol += dur
 						}
-						log.Println("ping to", xaxa.Addr, lol/time.Duration(i))
+						if i != 0 {
+							log.Println("ping+100K to", xaxa.Addr, lol/time.Duration(i))
+						}
 						close(dun)
 					}()
 					select {

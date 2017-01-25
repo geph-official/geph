@@ -52,8 +52,11 @@ func (ctx *Context) Accept() (conn io.ReadWriteCloser, err error) {
 	}
 }
 
-// Ping measures the time it takes to send and receive a certain amount of data. Only one ping may be in flight at a given time!
-func (ctx *Context) Ping(bts []byte) (rtt time.Duration, err error) {
+// Ping measures the time it takes to RTT and receive a certain amount of data. Only one ping may be in flight at a given time!
+func (ctx *Context) Ping(kbs int) (rtt time.Duration, err error) {
+	if kbs > 50 {
+		panic("WOW")
+	}
 	start := time.Now()
 	ctx.tabLock.Lock()
 	// select a subctx
@@ -65,7 +68,7 @@ func (ctx *Context) Ping(bts []byte) (rtt time.Duration, err error) {
 	ctx.tabLock.Unlock()
 	sctx.wirewlok.Lock()
 	defer sctx.wirewlok.Unlock()
-	err = struc.Pack(sctx.wire, &segment{Flag: flPing, Body: bts})
+	err = struc.Pack(sctx.wire, &segment{Flag: flPing, Body: []byte{byte(kbs)}})
 	if err != nil {
 		return
 	}

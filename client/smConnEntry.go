@@ -137,7 +137,7 @@ func (cmd *Command) smConnEntry() {
 						//log.Println("32k to", xaxa.Addr, dur)
 						var lol time.Duration
 						var i int
-						for ; i < 10; i++ {
+						for ; i < 2; i++ {
 							dur, err := cand.Ping(49) // get 50K
 							if err != nil {
 								break

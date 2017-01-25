@@ -49,7 +49,7 @@ func BenchmarkLol(b *testing.B) {
 		}
 	}
 	for i := 0; i < 10; i++ {
-		dur, _ := cont.Ping(make([]byte, 50000))
+		dur, _ := cont.Ping(50)
 		fmt.Println(dur, i)
 	}
 	lsnr, _ := net.Listen("tcp", "127.0.0.1:13370")

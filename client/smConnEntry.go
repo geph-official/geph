@@ -137,15 +137,15 @@ func (cmd *Command) smConnEntry() {
 						//log.Println("32k to", xaxa.Addr, dur)
 						var lol time.Duration
 						var i int
-						for ; i < 25; i++ {
-							dur, err := cand.Ping(make([]byte, 2000))
+						for ; i < 2; i++ {
+							dur, err := cand.Ping(50) // get 50K
 							if err != nil {
 								break
 							}
 							lol += dur
 						}
 						if i != 0 {
-							log.Println("ping to", xaxa.Addr, lol/time.Duration(i))
+							log.Println("ping+100K to", xaxa.Addr, lol/time.Duration(i))
 						}
 						close(dun)
 					}()

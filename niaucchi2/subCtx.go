@@ -105,6 +105,7 @@ func (sctx *subCtx) mainThread() (err error) {
 				go func() {
 					sctx.wirewlok.Lock()
 					defer sctx.wirewlok.Unlock()
+					newseg.Body = make([]byte, int(newseg.Body[0]%50)*1024)
 					struc.Pack(sctx.wire, &newseg)
 				}()
 			}

@@ -17,8 +17,8 @@ import (
 
 	"context"
 
-	"github.com/niwl/geph/common"
-	"github.com/niwl/geph/niaucchi2"
+	"github.com/rensa-labs/geph/common"
+	"github.com/rensa-labs/geph/niaucchi2"
 	"github.com/bunsim/goproxy"
 	"github.com/google/subcommands"
 

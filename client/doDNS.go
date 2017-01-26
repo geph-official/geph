@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/niwl/geph/niaucchi2"
+	"github.com/rensa-labs/geph/niaucchi2"
 	"github.com/miekg/dns"
 )
 

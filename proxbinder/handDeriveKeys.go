@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/niwl/geph/common"
+	"github.com/rensa-labs/geph/common"
 
 	"gopkg.in/bunsim/natrium.v1"
 )

@@ -15,7 +15,7 @@ import (
 	"gopkg.in/bunsim/miniss.v1"
 	"gopkg.in/bunsim/natrium.v1"
 
-	"github.com/niwl/geph/niaucchi2"
+	"github.com/rensa-labs/geph/niaucchi2"
 )
 
 func (cmd *Command) manageOneCtx(uid string, nct *niaucchi2.Context) {

@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/time/rate"
 
-	"github.com/niwl/geph/common"
+	"github.com/rensa-labs/geph/common"
 )
 
 func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool, limit, harshlimit *rate.Limiter,

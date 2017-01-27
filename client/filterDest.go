@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/niwl/geph/common"
+	"github.com/rensa-labs/geph/common"
 )
 
 const cGoogleDNS = "8.8.8.8:53"

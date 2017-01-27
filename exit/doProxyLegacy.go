@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/time/rate"
 
-	"github.com/niwl/geph/niaucchi"
+	"github.com/rensa-labs/geph/niaucchi"
 	"gopkg.in/bunsim/natrium.v1"
 )
 

@@ -67,7 +67,7 @@ func (cmd *Command) handGetNodes(w http.ResponseWriter, r *http.Request) {
 
 	tosend.Expires = time.Now().Add(time.Hour).Format(time.RFC3339)
 	tosend.Nodes = cmd.edb.GetNodes(
-		binary.BigEndian.Uint64(natrium.SecureHash([]byte(rmadr), nil)[:8]))
+		int(binary.BigEndian.Uint16(natrium.SecureHash([]byte(rmadr), nil)[:8])))
 	bts, _ := json.Marshal(&tosend)
 	sig := cmd.identity.Sign(bts)
 	w.Header().Add("X-Geph-Signature", natrium.HexEncode(sig))

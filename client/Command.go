@@ -17,16 +17,13 @@ import (
 
 	"context"
 
-	"github.com/rensa-labs/geph/common"
-	"github.com/rensa-labs/geph/niaucchi2"
 	"github.com/bunsim/goproxy"
 	"github.com/google/subcommands"
+	"github.com/rensa-labs/geph/common"
+	"github.com/rensa-labs/geph/niaucchi2"
 
 	// SQLite3
 	_ "gopkg.in/mattn/go-sqlite3.v1"
-
-	// pprof
-	_ "net/http/pprof"
 )
 
 const cFRONT = "a0.awsstatic.com"

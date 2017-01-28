@@ -32,16 +32,3 @@ which must be signed, via the `X-Geph-Signature` header, with the key of the exi
 
     - Proof of work (vulnerable to adversaries with huge computational power; very annoying to mobile users)
     - Usernames (vulnerable to adversaries with many usernames, arguably easier than controlling many IPs)
-
-### Proxying traffic
-
-Port 2378 runs an extremely simple proxy protocol over unobfuscated Niaucchi. The client sends this:
-
-    1 bytes: 0x00 (higher numbers reserved for future extensions)
-    n bytes: pascal-string of destination address
-
-and is patched through (no ack to save an RTT).
-
-The KiSS uses the exit node's public key to authenticate traffic, ensuring that no man-in-the-middle attack can happen.
-
-In addition, the `/warpfront/` hosts an warpfront-based tunnel for those who have to do HTTP.

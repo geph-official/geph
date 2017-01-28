@@ -23,15 +23,17 @@ func newEntryDB(fname string) *entryDB {
 		fname = "file::memory:?cache=shared"
 	}
 	db, _ := sql.Open("sqlite3", fname)
-	db.Exec("create table clients (cid integer unique not null)")
-	db.Exec(`create table nodes (nid text unique not null, addr text not null,
+	tx, _ := db.Begin()
+	tx.Exec("create table if not exists clients (cid integer unique not null)")
+	tx.Exec(`create table if not exists nodes (nid text unique not null, addr text not null,
 		 asn text not null, lastseen integer not null)`)
-	db.Exec(`create table mapping (
+	tx.Exec(`create table if not exists mapping (
 		cid integer,
 		nid text,
 		foreign key(cid) references clients(cid) on delete cascade,
 		foreign key(nid) references nodes(nid) on delete cascade
 	)`)
+	tx.Commit()
 	// police based on lastseen
 	go func() {
 		for {
@@ -50,7 +52,12 @@ func newEntryDB(fname string) *entryDB {
 
 func (edb *entryDB) getASN(addr string) (string, error) {
 	var asn string
-	err := edb.dbHand.QueryRow("select asn from nodes where addr=$1", addr).Scan(&asn)
+	tx, err := edb.dbHand.Begin()
+	if err != nil {
+		return "", err
+	}
+	err = tx.QueryRow("select asn from nodes where addr=$1", addr).Scan(&asn)
+	tx.Commit()
 	if err != nil {
 		// TODO do this locally
 		resp, err := http.Get("https://ipinfo.io/" + strings.Split(addr, ":")[0] + "/org")

@@ -88,7 +88,12 @@ func (edb *entryDB) AddNode(addr string, cookie []byte) error {
 		return err
 	}
 	defer tx.Commit()
-	_, err = tx.Exec("insert or replace into nodes values($1, $2, $3, $4)",
+	_, err = tx.Exec("insert or ignore into nodes values($1, $2, $3, $4)",
+		natrium.HexEncode(cookie), addr, asn, time.Now().Unix())
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec("update nodes set addr=$1,asn=$2,lastseen=$3 where nid=$4",
 		natrium.HexEncode(cookie), addr, asn, time.Now().Unix())
 	return err
 }

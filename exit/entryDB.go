@@ -30,7 +30,7 @@ func newEntryDB(fname string) *entryDB {
 		cid integer,
 		nid text,
 		foreign key(cid) references clients(cid) on delete cascade,
-		foreign key(uid) references nodes(nid) on delete cascade
+		foreign key(nid) references nodes(nid) on delete cascade
 	)`)
 	// police based on lastseen
 	go func() {

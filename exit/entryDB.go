@@ -41,7 +41,7 @@ func newEntryDB(fname string) *entryDB {
 				continue
 			}
 			tx.Exec("pragma foreign_keys=1")
-			tx.Exec("delete from nodes where lastseen<$1", time.Now().Add(-time.Minute*5))
+			tx.Exec("delete from nodes where lastseen<$1", time.Now().Add(-time.Minute*5).Unix())
 			tx.Commit()
 		}
 	}()

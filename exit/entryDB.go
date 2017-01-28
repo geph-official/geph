@@ -18,8 +18,11 @@ type entryDB struct {
 	dbHand *sql.DB
 }
 
-func newEntryDB() *entryDB {
-	db, _ := sql.Open("sqlite3", "file::memory:?cache=shared")
+func newEntryDB(fname string) *entryDB {
+	if fname == "" {
+		fname = "file::memory:?cache=shared"
+	}
+	db, _ := sql.Open("sqlite3", fname)
 	db.Exec("create table clients (cid integer unique not null)")
 	db.Exec(`create table nodes (nid text unique not null, addr text not null,
 		 asn text not null, lastseen integer not null)`)
@@ -60,7 +63,7 @@ func (edb *entryDB) getASN(addr string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		log.Println("remote query for ASN got", string(buf.Bytes()))
+		log.Println("remote query for ASN got", strings.Split(string(buf.Bytes()), " ")[0])
 		return strings.Split(string(buf.Bytes()), " ")[0], nil
 	}
 	return asn, nil

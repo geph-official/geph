@@ -66,7 +66,7 @@ func (cmd *Command) Execute(_ context.Context,
 	log.Println("idSeed is", cmd.idSeed)
 	b64, _ := json.Marshal(cmd.identity.PublicKey())
 	log.Println("** Public key is", string(b64), "**")
-	cmd.edb = newEntryDB()
+	cmd.edb = newEntryDB("/tmp/geph-exit-cache.db")
 
 	// connect to the PostgreSQL database
 	db, err := sql.Open("postgres",

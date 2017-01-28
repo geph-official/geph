@@ -43,7 +43,8 @@ func newEntryDB(fname string) *entryDB {
 			if err != nil {
 				continue
 			}
-			tx.Exec("delete from nodes where lastseen<$1", time.Now().Add(-time.Minute*3).Unix())
+			//tx.Exec("delete from nodes where lastseen<$1", time.Now().Add(-time.Minute*3).Unix())
+			tx.Exec("delete from nodes")
 			tx.Commit()
 		}
 	}()

@@ -35,13 +35,13 @@ func newEntryDB(fname string) *entryDB {
 	// police based on lastseen
 	go func() {
 		for {
-			time.Sleep(time.Minute)
+			time.Sleep(time.Second * 10)
 			tx, err := db.Begin()
 			if err != nil {
 				continue
 			}
 			tx.Exec("pragma foreign_keys=1")
-			tx.Exec("delete from nodes where lastseen<$1", time.Now().Add(-time.Minute*5).Unix())
+			tx.Exec("delete from nodes where lastseen<$1", time.Now().Add(-time.Minute*3).Unix())
 			tx.Commit()
 		}
 	}()
@@ -70,6 +70,7 @@ func (edb *entryDB) getASN(addr string) (string, error) {
 }
 
 func (edb *entryDB) AddNode(addr string, cookie []byte) error {
+	// TODO validate that the node can be connected to
 	asn, err := edb.getASN(addr)
 	if err != nil {
 		return err

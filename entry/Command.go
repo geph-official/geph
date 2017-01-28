@@ -135,16 +135,14 @@ func (cmd *Command) Execute(_ context.Context,
 		tosend.Addr = fmt.Sprintf("%v:%v", myip, lsnr.Addr().(*net.TCPAddr).Port)
 		tosend.Cookie = cookie
 		bts, _ := json.Marshal(tosend)
-		fmt.Println(string(bts))
 		resp, err = myHTTP.Post(fmt.Sprintf("http://%v:8081/update-node", choice),
 			"application/json",
 			bytes.NewReader(bts))
 		if err != nil {
 			log.Println("WARNING: failed uploading entry info to", choice)
 		} else {
-			log.Println("uploaded entry info to", choice)
 			resp.Body.Close()
 		}
-		time.Sleep(time.Minute * 2)
+		time.Sleep(time.Second * 30)
 	}
 }

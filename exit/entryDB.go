@@ -93,7 +93,7 @@ func (edb *entryDB) GetNodes(seed int) (nodes map[string][]byte) {
 	defer tx.Commit()
 	tx.Exec("pragma foreign_keys=1")
 	// put ourselves into the system first
-	tx.Exec("insert or replace into clients", seed)
+	tx.Exec("insert or replace into clients values($1)", seed)
 	for try := 0; try < 20; try++ {
 		// reinitialize nodes
 		nodes = make(map[string][]byte)

@@ -22,6 +22,7 @@ func newEntryDB(fname string) *entryDB {
 	if fname == "" {
 		fname = "file::memory:?cache=shared"
 	}
+	fname = fname + "?foreign_keys=on"
 	db, _ := sql.Open("sqlite3", fname)
 	tx, _ := db.Begin()
 	tx.Exec("create table if not exists clients (cid integer unique not null)")
@@ -42,7 +43,6 @@ func newEntryDB(fname string) *entryDB {
 			if err != nil {
 				continue
 			}
-			tx.Exec("pragma foreign_keys=1")
 			tx.Exec("delete from nodes where lastseen<$1", time.Now().Add(-time.Minute*3).Unix())
 			tx.Commit()
 		}
@@ -87,7 +87,6 @@ func (edb *entryDB) AddNode(addr string, cookie []byte) error {
 		return err
 	}
 	defer tx.Commit()
-	tx.Exec("pragma foreign_keys=1")
 	_, err = tx.Exec("insert or replace into nodes values($1, $2, $3, $4)",
 		natrium.HexEncode(cookie), addr, asn, time.Now().Unix())
 	return err
@@ -99,7 +98,6 @@ func (edb *entryDB) GetNodes(seed int) (nodes map[string][]byte) {
 		return make(map[string][]byte)
 	}
 	defer tx.Commit()
-	tx.Exec("pragma foreign_keys=1")
 	// put ourselves into the system first
 	tx.Exec("insert or replace into clients values($1)", seed)
 	for try := 0; try < 20; try++ {

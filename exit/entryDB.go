@@ -11,7 +11,7 @@ import (
 
 	"gopkg.in/bunsim/natrium.v1"
 	// SQLite interface
-	_ "gopkg.in/mattn/go-sqlite3.v1"
+	"gopkg.in/mattn/go-sqlite3.v1"
 )
 
 type entryDB struct {
@@ -21,19 +21,19 @@ type entryDB struct {
 func newEntryDB(fname string) *entryDB {
 	if fname == "" {
 		fname = "file::memory:?cache=shared"
+	} else {
+		fname = "file:" + fname
 	}
-	fname = fname + "?foreign_keys=on"
-	db, _ := sql.Open("sqlite3", fname)
+	log.Println("gotta open", fname)
+	db, _ := sql.Open("sqlite3_with_fk", fname)
 	tx, _ := db.Begin()
+	tx.Exec("PRAGMA foreign_keys = ON")
 	tx.Exec("create table if not exists clients (cid integer unique not null)")
 	tx.Exec(`create table if not exists nodes (nid text unique not null, addr text not null,
 		 asn text not null, lastseen integer not null)`)
 	tx.Exec(`create table if not exists mapping (
-		cid integer,
-		nid text,
-		foreign key(cid) references clients(cid) on delete cascade,
-		foreign key(nid) references nodes(nid) on delete cascade
-	)`)
+		cid integer REFERENCES clients(cid) ON DELETE CASCADE,
+		nid text REFERENCES nodes(nid) ON DELETE CASCADE)`)
 	tx.Commit()
 	// police based on lastseen
 	go func() {
@@ -41,10 +41,10 @@ func newEntryDB(fname string) *entryDB {
 			time.Sleep(time.Second * 10)
 			tx, err := db.Begin()
 			if err != nil {
+				log.Println(err.Error())
 				continue
 			}
-			//tx.Exec("delete from nodes where lastseen<$1", time.Now().Add(-time.Minute*3).Unix())
-			tx.Exec("delete from nodes")
+			tx.Exec("delete from nodes where lastseen<$1", time.Now().Add(-time.Minute*3).Unix())
 			tx.Commit()
 		}
 	}()
@@ -148,4 +148,15 @@ func (edb *entryDB) GetNodes(seed int) (nodes map[string][]byte) {
 	}
 	// give up, return with what we have
 	return
+}
+
+// SQLite3 with foreign keys
+func init() {
+	sql.Register("sqlite3_with_fk",
+		&sqlite3.SQLiteDriver{
+			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
+				_, err := conn.Exec("PRAGMA foreign_keys = ON", nil)
+				return err
+			},
+		})
 }

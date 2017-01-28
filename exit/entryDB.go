@@ -130,7 +130,9 @@ func (edb *entryDB) GetNodes(seed int) (nodes map[string][]byte) {
 			}
 			nodes[addr] = bts
 			seenasns[asn] = true
-			tx.Exec("insert into mapping values($1,$2)", seed, nid)
+			if existnum != 3 {
+				tx.Exec("insert into mapping values($1,$2)", seed, nid)
+			}
 		}
 		// enforce constraints
 		if len(seenasns) > 1 {

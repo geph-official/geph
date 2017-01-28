@@ -27,7 +27,7 @@ func (cmd *Command) handUpdateNode(w http.ResponseWriter, r *http.Request) {
 	}
 	err = cmd.edb.AddNode(req.Addr, req.Cookie)
 	if err != nil {
-		log.Println("handUpdateNode: node claiming to be", req.Addr, "doesn't check out")
+		log.Println("handUpdateNode: node claiming to be", req.Addr, "doesn't check out", err.Error())
 	} else {
 		//log.Println("handUpdateNode: node updated:", req.Addr, "/", natrium.HexEncode(req.Cookie))
 	}

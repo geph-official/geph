@@ -56,20 +56,19 @@ func (cmd *Command) Execute(_ context.Context,
 	natrium.RandBytes(cookie)
 	lsnr, _ := net.ListenTCP("tcp", nil)
 	go cmd.doForward(lsnr, cookie, &choice)
+lRETRY:
+	resp, err := myHTTP.Get("http://icanhazip.com")
+	if err != nil {
+		log.Println("WARNING: stuck while getting our own IP:", err.Error(), "retrying in 30 secs")
+		time.Sleep(time.Second * 30)
+		goto lRETRY
+	}
+	buf := new(bytes.Buffer)
+	io.Copy(buf, resp.Body)
+	resp.Body.Close()
+	myip := strings.Trim(string(buf.Bytes()), "\n ")
+	log.Println("my own IP address guessed:", myip)
 	for {
-		// our first step is to guess our own IP
-	lRETRY:
-		resp, err := myHTTP.Get("http://icanhazip.com")
-		if err != nil {
-			log.Println("WARNING: stuck while getting our own IP:", err.Error(), "retrying in 30 secs")
-			time.Sleep(time.Second * 30)
-			goto lRETRY
-		}
-		buf := new(bytes.Buffer)
-		io.Copy(buf, resp.Body)
-		resp.Body.Close()
-		myip := strings.Trim(string(buf.Bytes()), "\n ")
-		log.Println("my own IP address guessed:", myip)
 		// we obtain the exit info first
 		resp, err = myHTTP.Get("https://binder.geph.io/exit-info")
 		if err != nil {

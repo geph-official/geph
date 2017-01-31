@@ -94,7 +94,7 @@ func (edb *entryDB) AddNode(addr string, cookie []byte) error {
 		return err
 	}
 	_, err = tx.Exec("update nodes set addr=$1,asn=$2,lastseen=$3 where nid=$4",
-		natrium.HexEncode(cookie), addr, asn, time.Now().Unix())
+		addr, asn, time.Now().Unix(), natrium.HexEncode(cookie))
 	return err
 }
 

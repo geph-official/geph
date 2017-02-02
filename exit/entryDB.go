@@ -60,6 +60,7 @@ func (edb *entryDB) getASN(addr string) (string, error) {
 	err = tx.QueryRow("select asn from nodes where addr=$1", addr).Scan(&asn)
 	tx.Commit()
 	if err != nil {
+		log.Println("have to remote query:", err.Error())
 		// TODO do this locally
 		resp, err := http.Get("https://ipinfo.io/" + strings.Split(addr, ":")[0] + "/org")
 		if err != nil {

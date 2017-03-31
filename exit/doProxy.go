@@ -131,10 +131,10 @@ func (cmd *Command) doProxy() {
 			}
 			ctkey := natrium.HexEncode(buf[1:])
 			// Check the ctxTab nowx
+			var sctx *niaucchi2.Context
 			ctxTabLok.Lock()
 			if ctxTab[ctkey] == nil {
 				ctxTab[ctkey] = niaucchi2.NewServerCtx()
-				ctxTab[ctkey].Absorb(mwire)
 				go cmd.manageOneCtx(uid, ctxTab[ctkey])
 				go func() {
 					ctxTab[ctkey].Tomb().Wait()
@@ -142,10 +142,10 @@ func (cmd *Command) doProxy() {
 					defer ctxTabLok.Unlock()
 					delete(ctxTab, ctkey)
 				}()
-			} else {
-				ctxTab[ctkey].Absorb(mwire)
 			}
+			sctx = ctxTab[ctkey]
 			ctxTabLok.Unlock()
+			sctx.Absorb(mwire)
 		}()
 	}
 }

@@ -22,6 +22,7 @@ func (cmd *Command) getExitNodes() (nds map[string][]byte, err error) {
 		return
 	}
 	defer resp.Body.Close()
+	log.Println("exit-info gotten")
 	buf := new(bytes.Buffer)
 	io.Copy(buf, resp.Body)
 	// verify the data

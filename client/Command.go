@@ -109,7 +109,7 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.uname, "uname", "test", "username")
 	f.StringVar(&cmd.pwd, "pwd", "removekebab", "password")
 	f.StringVar(&cmd.cachedir, "cachedir", "", "cache directory; if empty then no cache is used")
-	f.BoolVar(&cmd.powersave, "powersave", false,
+	f.BoolVar(&cmd.powersave, "powersave", true,
 		"optimize for saving power on mobile devices, at the cost of some performance")
 
 	f.StringVar(&cmd.wliststr, "whitelist", "", "comma-separated countries to not proxy (example: \"CN,US\")")

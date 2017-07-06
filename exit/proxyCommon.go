@@ -91,7 +91,7 @@ func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool, limit, harsh
 		return
 	}
 	// go ahead and connect
-	rmt, err := net.DialTimeout("tcp", addr.String(), time.Second*5)
+	zrmt, err := net.DialTimeout("tcp", addr.String(), time.Second*5)
 	if err != nil {
 		if doAck {
 			clnt.Write([]byte{0x05})
@@ -101,6 +101,9 @@ func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool, limit, harsh
 	if doAck {
 		clnt.Write([]byte{0x00})
 	}
+	rmt := zrmt.(*net.TCPConn)
+	rmt.SetKeepAlive(true)
+	rmt.SetKeepAlivePeriod(time.Second * 30)
 	// forward traffic
 	defer rmt.Close()
 	go func() {
@@ -108,6 +111,7 @@ func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool, limit, harsh
 		defer clnt.Close()
 		buf := make([]byte, 8192)
 		for {
+			rmt.SetReadDeadline(time.Now().Add(time.Minute * 30))
 			n, err := rmt.Read(buf)
 			if err != nil {
 				return
@@ -135,6 +139,7 @@ func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool, limit, harsh
 			harshlimit.WaitN(ctx, n)
 		}
 		limit.WaitN(ctx, n)
+		rmt.SetWriteDeadline(time.Now().Add(time.Minute * 30))
 		_, err = rmt.Write(buf[:n])
 		if err != nil {
 			return

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"strings"
@@ -50,11 +51,12 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 func (cmd *Command) Execute(_ context.Context,
 	f *flag.FlagSet,
 	args ...interface{}) subcommands.ExitStatus {
+	rand.Seed(time.Now().UnixNano())
 	// we enter the loop
 	var choice string
 	cookie := make([]byte, 12)
 	natrium.RandBytes(cookie)
-	lsnr, _ := net.ListenTCP("tcp", nil)
+	lsnr := listenTCP(10000 + rand.Int()%50000)
 	go cmd.doForward(lsnr, cookie, &choice)
 lRETRY:
 	resp, err := myHTTP.Get("http://icanhazip.com")

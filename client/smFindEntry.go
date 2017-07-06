@@ -19,6 +19,7 @@ func (cmd *Command) smFindEntry() {
 			cmd.smState = cmd.smFindEntry
 			return
 		}
+		log.Println(exits)
 		entries := cmd.getEntryNodes(exits)
 		if len(entries) == 0 {
 			log.Println("no entries found!")

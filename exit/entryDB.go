@@ -64,13 +64,13 @@ func (edb *entryDB) getASN(addr string) (string, error) {
 		// TODO do this locally
 		resp, err := http.Get("https://ipinfo.io/" + strings.Split(addr, ":")[0] + "/org")
 		if err != nil {
-			return "", err
+			return "0", nil
 		}
 		defer resp.Body.Close()
 		buf := new(bytes.Buffer)
 		_, err = io.Copy(buf, resp.Body)
 		if err != nil {
-			return "", err
+			return "0", nil
 		}
 		log.Println("remote query for ASN got", strings.Split(string(buf.Bytes()), " ")[0])
 		return strings.Split(string(buf.Bytes()), " ")[0], nil

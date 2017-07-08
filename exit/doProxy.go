@@ -28,7 +28,7 @@ func (cmd *Command) manageOneCtx(uid string, nct *niaucchi2.Context) {
 		log.Println(uid, "connected with", bal, "MiB left")
 	}
 	bal *= 1000000
-	limit := rate.NewLimiter(rate.Limit(cmd.bwLimit*1024), 512*1024)
+	limit := rate.NewLimiter(rate.Limit(cmd.bwLimit*1024), 2*1024*1024)
 	harshlimit := rate.NewLimiter(rate.Limit(32*1024), 128*1024)
 	// little balance
 	lbal := 0

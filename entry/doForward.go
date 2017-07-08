@@ -31,11 +31,7 @@ func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest *string) {
 			}
 			var remote net.Conn
 			if lol[0] != 0 {
-				remote, err = net.DialTimeout("tcp", fmt.Sprintf("%v:2378", *dest), time.Second*10)
-				if err != nil {
-					log.Println("WARNING: failed to forward to", *dest, ":", err.Error())
-					return
-				}
+				return // Cannot support legacy anymore!
 			} else {
 				remote, err = net.DialTimeout("tcp", fmt.Sprintf("%v:2379", *dest), time.Second*10)
 				if err != nil {

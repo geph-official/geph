@@ -46,7 +46,7 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.idSeed, "idSeed", "", "seed to use to generate private key")
 	f.StringVar(&cmd.pgURL, "pgURL", "127.0.0.1:15432",
 		"location of the PostgreSQL account database")
-	f.IntVar(&cmd.bwLimit, "bwLimit", 600, "bandwidth limit for every session (KiB/s)")
+	f.IntVar(&cmd.bwLimit, "bwLimit", 2000, "bandwidth limit for every session (KiB/s)")
 
 	f.StringVar(&cmd.wfFront, "wfFront", "", "front for warpfront")
 	f.StringVar(&cmd.wfHost, "wfHost", "", "host for warpfront")
@@ -77,7 +77,6 @@ func (cmd *Command) Execute(_ context.Context,
 	cmd.pgdb = db
 
 	// run the proxy
-	go cmd.doProxyLegacy()
 	go cmd.doProxy()
 	if cmd.wfFront != "" {
 		go cmd.doFront()

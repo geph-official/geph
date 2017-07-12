@@ -32,7 +32,7 @@ func (sctx *subCtx) sendAliv() error {
 	if sctx.parent.isClient {
 		wait = 800
 	} else {
-		wait = 120
+		wait = 240
 	}
 	for {
 		sctx.wirewlok.Lock()
@@ -42,7 +42,7 @@ func (sctx *subCtx) sendAliv() error {
 			return err
 		}
 		//time.Sleep(time.Second * 5)
-		time.Sleep(time.Second * time.Duration(wait+rand.Int()%60))
+		time.Sleep(time.Second * time.Duration(wait+rand.Int()%30))
 	}
 }
 

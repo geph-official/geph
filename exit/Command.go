@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"context"
 
@@ -81,11 +82,19 @@ func (cmd *Command) Execute(_ context.Context,
 	if cmd.wfFront != "" {
 		go cmd.doFront()
 	}
+	mux := http.NewServeMux()
+	hserv := &http.Server{
+		ReadTimeout:    30 * time.Second,
+		WriteTimeout:   30 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+		Handler:        mux,
+		Addr:           ":8081",
+	}
 
 	// run the exit API
-	http.HandleFunc("/update-node", cmd.handUpdateNode)
-	http.HandleFunc("/get-nodes", cmd.handGetNodes)
-	http.HandleFunc("/test-speed", cmd.handTestSpeed)
-	http.ListenAndServe(":8081", nil)
+	mux.HandleFunc("/update-node", cmd.handUpdateNode)
+	mux.HandleFunc("/get-nodes", cmd.handGetNodes)
+	mux.HandleFunc("/test-speed", cmd.handTestSpeed)
+	hserv.ListenAndServe()
 	return 0
 }

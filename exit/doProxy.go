@@ -102,11 +102,13 @@ func (cmd *Command) doProxy() {
 	ctxTab := make(map[string]*niaucchi2.Context)
 	var ctxTabLok sync.Mutex
 	for {
-		wire, err := lsnr.Accept()
+		iwire, err := lsnr.Accept()
 		if err != nil {
 			panic(err.Error())
 		}
+		wire := iwire.(*net.TCPConn)
 		go func() {
+			wire.SetDeadline(time.Now().Add(time.Minute))
 			io.ReadFull(wire, make([]byte, 1))
 			// Handle MiniSS first
 			mwire, err := miniss.Handshake(wire, cmd.identity.ToECDH())
@@ -145,6 +147,8 @@ func (cmd *Command) doProxy() {
 			}
 			sctx = ctxTab[ctkey]
 			ctxTabLok.Unlock()
+			// clear deadline
+			wire.SetDeadline(time.Time{})
 			sctx.Absorb(mwire)
 		}()
 	}

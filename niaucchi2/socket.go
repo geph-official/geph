@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"sync"
+	"time"
 
 	"github.com/lunixbochs/struc"
 
@@ -62,7 +63,14 @@ func (sok *socket) Write(p []byte) (n int, err error) {
 }
 
 func (sok *socket) realWrite(p []byte) (n int, err error) {
-	sok.sendwind <- struct{}{}
+	select {
+	case sok.sendwind <- struct{}{}:
+	case <-sok.death.Dying():
+		return 0, sok.death.Err()
+	case <-time.After(time.Minute * 15):
+		sok.death.Kill(ErrTimeout)
+		return 0, sok.death.Err()
+	}
 	//log.Println("niaucchi2: sendwind decreased to", 256-len(sok.sendwind), "on", sok.sockid)
 	sok.wlock.Lock()
 	defer sok.wlock.Unlock()
@@ -168,6 +176,10 @@ func (sok *socket) Read(p []byte) (n int, err error) {
 		}
 	case <-sok.death.Dying():
 		err = sok.death.Err()
+		return
+	case <-time.After(time.Minute * 15):
+		err = ErrTimeout
+		sok.death.Kill(err)
 		return
 	}
 }

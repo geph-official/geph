@@ -138,8 +138,9 @@ func (cmd *Command) doProxy() {
 			if ctxTab[ctkey] == nil {
 				ctxTab[ctkey] = niaucchi2.NewServerCtx()
 				go cmd.manageOneCtx(uid, ctxTab[ctkey])
+				tmb := ctxTab[ctkey].Tomb()
 				go func() {
-					ctxTab[ctkey].Tomb().Wait()
+					<-tmb.Dying()
 					ctxTabLok.Lock()
 					defer ctxTabLok.Unlock()
 					delete(ctxTab, ctkey)

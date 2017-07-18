@@ -87,6 +87,7 @@ func (sctx *subCtx) mainThread() (err error) {
 		err = struc.Unpack(sctx.wire, &newseg)
 		if err != nil {
 			sctx.parent.death.Kill(err)
+			sctx.death.Kill(err)
 			return
 		}
 		select {

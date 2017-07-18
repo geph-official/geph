@@ -1,6 +1,7 @@
 package client
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"encoding/base32"
 	"flag"
@@ -39,6 +40,9 @@ var cleanHTTP = &http.Client{
 	Transport: &http.Transport{
 		TLSHandshakeTimeout: time.Second * 10,
 		IdleConnTimeout:     time.Second * 10,
+		MaxIdleConns:        16,
+		MaxIdleConnsPerHost: 16,
+		TLSNextProto:        make(map[string]func(string, *tls.Conn) http.RoundTripper),
 	},
 	Timeout: time.Second * 200,
 }

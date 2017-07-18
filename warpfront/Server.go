@@ -153,7 +153,6 @@ func (srv *Server) ServeHTTP(wr http.ResponseWriter, rq *http.Request) {
 			case <-time.After(time.Second * 30):
 				wr.Write(contbuf)
 				wr.(http.Flusher).Flush()
-				time.Sleep(time.Second)
 				return
 			case <-ded:
 				srv.destroySession(key)
@@ -171,7 +170,7 @@ func (srv *Server) ServeHTTP(wr http.ResponseWriter, rq *http.Request) {
 			return
 		}
 		select {
-		case up <- pkrd.Bytes():
+		case up <- pkrd.Bytes(): // TODO potential deadlock; currently mitigated by a buffer
 			return
 		case <-time.After(time.Minute):
 			srv.destroySession(key)

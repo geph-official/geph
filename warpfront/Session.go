@@ -20,8 +20,8 @@ type session struct {
 
 func newSession() *session {
 	return &session{
-		rx:  make(chan []byte),
-		tx:  make(chan []byte),
+		rx:  make(chan []byte, 1024),
+		tx:  make(chan []byte, 1024),
 		ded: make(chan bool),
 		buf: new(bytes.Buffer),
 	}

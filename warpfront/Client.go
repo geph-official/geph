@@ -58,14 +58,14 @@ func Connect(client *http.Client, frontHost string, realHost string) (net.Conn, 
 		// poll and stuff into rx
 		for i := 0; ; i++ {
 			atomic.AddInt64(&clGetCount, 1)
-			//log.Println("warpfront: GET count", clGetCount, cid)
+			log.Println("warpfront: GET count", i)
 			resp, err := getWithHost(client,
 				fmt.Sprintf("%v/%x?serial=%v", frontHost, num, i),
 				realHost)
 			if err != nil {
 				return
 			}
-			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusContinue {
+			if resp.StatusCode != http.StatusOK {
 				log.Println("WAT DIE")
 				resp.Body.Close()
 				return

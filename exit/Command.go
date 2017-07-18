@@ -16,6 +16,9 @@ import (
 
 	// postgres
 	_ "github.com/lib/pq"
+
+	// pprof
+	_ "net/http/pprof"
 )
 
 // Command is the exit subcommand.
@@ -61,6 +64,10 @@ func (cmd *Command) Execute(_ context.Context,
 	if cmd.idSeed == "" {
 		panic("idSeed must be given")
 	}
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	// generate the real stuff from the flags
 	cmd.identity = natrium.EdDSADeriveKey([]byte(cmd.idSeed))

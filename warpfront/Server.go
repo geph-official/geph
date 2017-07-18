@@ -137,7 +137,7 @@ func (srv *Server) ServeHTTP(wr http.ResponseWriter, rq *http.Request) {
 	case "GET":
 		ctr := 0
 		start := time.Now()
-		for ctr < 1024*1024 && time.Now().Sub(start) < time.Second*120 {
+		for ctr < 1024*1024 && time.Now().Sub(start) < time.Second*50 {
 			select {
 			case bts := <-dn:
 				// write length, then bytes
@@ -150,7 +150,7 @@ func (srv *Server) ServeHTTP(wr http.ResponseWriter, rq *http.Request) {
 				}
 				ctr += len(bts)
 				wr.(http.Flusher).Flush()
-			case <-time.After(time.Second * 60):
+			case <-time.After(time.Second * 30):
 				wr.Write(contbuf)
 				wr.(http.Flusher).Flush()
 				time.Sleep(time.Second)

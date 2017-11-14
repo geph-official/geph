@@ -18,6 +18,7 @@ func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest *string) {
 		}
 		go func() {
 			defer raw.Close()
+			raw.SetDeadline(time.Now().Add(time.Minute))
 			clnt, err := cluttershirt.Server(cookie, raw)
 			if err != nil {
 				return
@@ -32,14 +33,14 @@ func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest *string) {
 			var remote net.Conn
 			if lol[0] != 0 {
 				return // Cannot support legacy anymore!
-			} else {
-				remote, err = net.DialTimeout("tcp", fmt.Sprintf("%v:2379", *dest), time.Second*10)
-				if err != nil {
-					log.Println("WARNING: failed to forward to", *dest, ":", err.Error())
-					return
-				}
+			}
+			remote, err = net.DialTimeout("tcp", fmt.Sprintf("%v:2379", *dest), time.Second*10)
+			if err != nil {
+				log.Println("WARNING: failed to forward to", *dest, ":", err.Error())
+				return
 			}
 			remote.Write(lol)
+			raw.SetDeadline(time.Time{})
 			defer remote.Close()
 			go func() {
 				defer remote.Close()

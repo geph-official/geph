@@ -34,7 +34,7 @@ func (cmd *Command) smConnEntry() {
 		for _, xaxa := range entries {
 			exit := exit
 			xaxa := xaxa
-			log.Println(xaxa.Addr, "from", exit)
+			log.Printf("%v (%x) from %v\n", xaxa.Addr, natrium.SecureHash(xaxa.Cookie, nil)[:4], exit)
 			if xaxa.Addr == "warpfront" {
 				go func() {
 					//xaxa.Cookie = []byte("http://localhost:8088;d2hk1ucgmi0pgc.cloudfront.net")

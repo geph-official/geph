@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rensa-labs/geph/niaucchi2"
 	"github.com/miekg/dns"
+	"github.com/rensa-labs/geph/niaucchi2"
 )
 
 type dnsCacheEntry struct {

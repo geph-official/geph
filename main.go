@@ -7,12 +7,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/rensa-labs/geph/binder"
-	"github.com/rensa-labs/geph/client"
-	"github.com/rensa-labs/geph/entry"
-	"github.com/rensa-labs/geph/exit"
-	"github.com/rensa-labs/geph/proxbinder"
 	"github.com/google/subcommands"
+	"github.com/rensa-labs/geph/internal/scmd/binder"
+	"github.com/rensa-labs/geph/internal/scmd/client"
+	"github.com/rensa-labs/geph/internal/scmd/entry"
+	"github.com/rensa-labs/geph/internal/scmd/exit"
+	"github.com/rensa-labs/geph/internal/scmd/proxbinder"
+
 	"gopkg.in/bunsim/natrium.v1"
 )
 

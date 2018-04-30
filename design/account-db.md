@@ -10,35 +10,45 @@ All security is performed over SSH; the PostgreSQL database itself is accessed w
 
 ## Account-related tables
 
-These tables store the current state of accounts.
+These tables store the current state of users.
 
-### AccInfo
+### Users
 
-This table stores static information about accounts.
+This table stores *mandatory* information about users. Every user has an entry here.
 
 ````
-CREATE TABLE AccInfo (
-    Uid     TEXT PRIMARY KEY,
-    Uname   TEXT NOT NULL UNIQUE,
-    Ctime   TIMESTAMP
+CREATE TABLE Users (
+    ID SERIAL PRIMARY KEY,
+    Username TEXT NOT NULL,
+    PwdHash TEXT NOT NULL,
+    FreeBalance INTEGER NOT NULL,
+    CreateTime TIMESTAMP NOT NULL
 )
 ````
 
-Once a new row is added to this table, it is generally not going to be altered or deleted in the future.
+### PremiumPlans
 
-The `Uid` is `base32(blake2b(client_pubkey)[:10])`.
-
-### AccBalances
-
-This table stores the balances of every account.
+This table stores all the different premium plans available. The description is a big blob for multilingual flavor text on the website.
 
 ````
-CREATE TABLE AccBalances (
-    Uid TEXT PRIMARY KEY REFERENCES AccInfo,
-    Mbs INTEGER NOT NULL
+CREATE TABLE PremiumPlans (
+    Plan TEXT PRIMARY KEY,
+    Description JSONB NOT NULL,
+    MaxSpeed INTEGER NOT NULL,
+    MonthlyBalance INTEGER NOT NULL,
+    MaxConns INTEGER NOT NULL,
+    Unlimited BOOL NOT NULL
 )
 ````
 
-### AccBillLog
+### Subscriptions
 
-This table logs all billing actions. **TBD**
+This table stores subscriptions for paying customers.
+
+````
+CREATE TABLE Subscriptions (
+    ID SERIAL PRIMARY KEY REFERENCES Users,
+    Plan TEXT REFERENCES PremiumPlans(Plan),
+    Expires TIMESTAMP NOT NULL
+)
+````

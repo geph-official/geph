@@ -8,4 +8,4 @@ ln -sf "geph-$(git describe --always)-linux-amd64" "geph-latest-linux-amd64"
 ln -sf "geph-$(git describe --always)-android-16-arm" "geph-latest-android-16-arm"
 ln -sf "geph-$(git describe --always)-android-16-386" "geph-latest-android-16-386"
 ln -sf "geph-$(git describe --always)-windows-4.0-386.exe" "geph-latest-windows-4.0-386.exe"
-sudo chown builder *
+#sudo chown builder *

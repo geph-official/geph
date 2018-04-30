@@ -4,11 +4,7 @@
 
 This document details the REST API exposed by the Geph binder located at `https://binder.geph.io`.
 
-One important thing to mention is that the binder is also served over domain-fronting CDNs (currently Amazon CloudFront). This, of course, breaks end-to-end security. Thus, particularly sensitive methods MUST not be accessed over domain fronting, and the binder will try to enforce this. Domain fronting is used --- only by clients --- to distribute information crucial to bootstrapping a connection to the free internet.
-
-## Methods allowed over domain-fronting
-
-### Querying the list of exit nodes
+## Querying the list of exit nodes
 
 The method is `GET /exit-info`. The response is:
 
@@ -27,7 +23,7 @@ The hex-encoded signature of the entire response, signed with a hard-coded key ~
 
 **Note**: the expiry date MUST not be more than 1 month in the future; this mitigates replay attacks.
 
-### Proxying through to an exit node
+## Proxying through to an exit node
 
 Clients often cannot directly connect to the exit nodes since they are blocked. Thus, the binder hosts a proxy service.
 
@@ -35,7 +31,7 @@ All URLs like `https://binder.geph.io/exits/noram.exits.geph.io/...` serve as re
 
 Security is provided by signatures at the exits, as detailed in the document about them.
 
-### Obtaining a captcha
+## Obtaining a captcha
 
 The method is `POST /fresh-captcha`. (POST prevents middleboxes like the CDN from caching). The response is:
 
@@ -44,7 +40,7 @@ The method is `POST /fresh-captcha`. (POST prevents middleboxes like the CDN fro
         "CaptchaImg": base64-encoded PNG image
     }
 
-### Registering an account
+## Registering an account (LEGACY)
 
 The method is `POST /register-account`. The request looks like this:
 
@@ -57,9 +53,31 @@ The method is `POST /register-account`. The request looks like this:
 
 In the response, `200` means a successful registration, `400` means malformed request (badly formatted JSON, badly formatted username, etc), `409` means the username already exists, and `403` in case the captcha is wrong.
 
-## Methods only allowed with end-to-end encryption
+## Registering an account (NEW)
 
-### General info about an account
+The method is `POST /users/`
+
+## Account status
+
+Account status can be read at `POST /user-status`. The request:
+
+    {
+        "Username": ...
+    }
+
+The response:
+
+    {
+        "FreeBalance": ...,
+        "PremiumInfo": {
+            "Plan": ...,
+            "Desc": ...,
+            "Unlimited": ...,
+            "ExpUnix": ...
+        }
+    }
+
+## General info about an account (LEGACY)
 
 Information about an account can be obtained at `POST /account-summary`. The request contains the following JSON body:
 

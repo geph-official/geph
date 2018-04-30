@@ -1,0 +1,20 @@
+package: github.com/rensa-labs/geph
+import:
+- package: github.com/bunsim/goproxy
+- package: github.com/dchest/captcha
+- package: github.com/google/subcommands
+- package: github.com/lib/pq
+- package: github.com/lunixbochs/struc
+- package: github.com/miekg/dns
+  version: ^1.0.5
+- package: golang.org/x/net/context
+- package: golang.org/x/net/proxy
+- package: golang.org/x/time/rate
+- package: gopkg.in/bunsim/cluttershirt.v1
+- package: gopkg.in/bunsim/miniss.v1
+  version: ^1.0.10
+- package: gopkg.in/bunsim/natrium.v1
+  version: ^1.1.0
+- package: gopkg.in/mattn/go-sqlite3.v1
+  version: ^1.6.0
+- package: gopkg.in/tomb.v2

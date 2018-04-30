@@ -1,0 +1,48 @@
+hash: d1a3c7e11f08c911d76253d3a90e12f1f7674935652f78f72d48861665be6154
+updated: 2018-04-26T19:03:26.318324917+08:00
+imports:
+- name: github.com/bunsim/goproxy
+  version: 3c809b25484ae283e461cc143330c70716ea31c4
+- name: github.com/dchest/captcha
+  version: 6a29415a8364ec2971fdc62d9e415ed53fc20410
+- name: github.com/google/subcommands
+  version: a3682377147edf596d303faabd89f81977b3f678
+- name: github.com/lib/pq
+  version: d34b9ff171c21ad295489235aec8b6626023cd04
+  subpackages:
+  - oid
+- name: github.com/lunixbochs/struc
+  version: 02e4c2afbb2ac4bae6876f52c8273fc4cf5a4b0a
+- name: github.com/miekg/dns
+  version: 83c435cc65d2862736428b9b4d07d0ab10ad3e4d
+- name: golang.org/x/crypto
+  version: b0697eccbea9adec5b7ba8008f4c33d98d733388
+  subpackages:
+  - ed25519
+  - ed25519/internal/edwards25519
+- name: golang.org/x/net
+  version: 5f9ae10d9af5b1c89ae6904293b14b064d4ada23
+  subpackages:
+  - bpf
+  - context
+  - internal/iana
+  - internal/socket
+  - internal/socks
+  - ipv4
+  - ipv6
+  - proxy
+- name: golang.org/x/time
+  version: fbb02b2291d28baffd63558aa44b4b56f178d650
+  subpackages:
+  - rate
+- name: gopkg.in/bunsim/cluttershirt.v1
+  version: c762d6606a0a9ae209e51b3fe734d5c9879f99b9
+- name: gopkg.in/bunsim/miniss.v1
+  version: 3baa5204d713296a11d1b139914ca2d2dfb96108
+- name: gopkg.in/bunsim/natrium.v1
+  version: 8ad4cb4c7f92728d37f2c57a0bb447e04d21c92a
+- name: gopkg.in/mattn/go-sqlite3.v1
+  version: 6c771bb9887719704b210e87e934f08be014bdb1
+- name: gopkg.in/tomb.v2
+  version: d5d1b5820637886def9eef33e03a27a9f166942c
+testImports: []

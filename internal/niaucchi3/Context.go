@@ -113,10 +113,11 @@ type subCtx struct {
 
 func (sctx *subCtx) sendAliv() error {
 	log.Println("niaucchi3: sendAliv() started")
-	wait := 360
+	wait := 240
 	for {
 		sctx.wirewlok.Lock()
 		err := struc.Pack(sctx.wire, &segment{Flag: flAliv})
+		log.Println("niaucchi3: sent keepalive")
 		sctx.wirewlok.Unlock()
 		if err != nil {
 			return err

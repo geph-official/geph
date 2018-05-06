@@ -15,7 +15,7 @@ func (cmd *Command) getFuLimiter(uid userID) *rate.Limiter {
 	defer cmd.fuTabLok.Unlock()
 	z := cmd.fuTab[uid]
 	if z == nil {
-		z = rate.NewLimiter(300*1000, 500*1000*1000)
+		z = rate.NewLimiter(300*1000, 1500*1000*1000)
 		cmd.fuTab[uid] = z
 	}
 	return z

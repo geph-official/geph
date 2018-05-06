@@ -61,7 +61,7 @@ func (cmd *Command) authUser(uname, pwd string) (uid userID, limit int, err erro
 		err = errors.New("wrong password")
 		return
 	}
-	limit = 375
+	limit = 1000
 	tx.QueryRow("SELECT maxspeed FROM Subscriptions NATURAL JOIN PremiumPlans WHERE ID = $1",
 		uid).Scan(&limit)
 	err = tx.Commit()

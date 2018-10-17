@@ -35,7 +35,7 @@ type Command struct {
 	identity natrium.EdDSAPrivate
 	edb      *entryDB
 
-	fuTab    map[userID]*rate.Limiter
+	fuTab    map[string]*rate.Limiter
 	fuTabLok sync.Mutex
 
 	pgdb *sql.DB
@@ -65,7 +65,7 @@ func (cmd *Command) SetFlags(f *flag.FlagSet) {
 func (cmd *Command) Execute(_ context.Context,
 	f *flag.FlagSet,
 	args ...interface{}) subcommands.ExitStatus {
-	cmd.fuTab = make(map[userID]*rate.Limiter)
+	cmd.fuTab = make(map[string]*rate.Limiter)
 	// validate
 	if cmd.idSeed == "" {
 		panic("idSeed must be given")

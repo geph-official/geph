@@ -28,24 +28,16 @@ import (
 )
 
 var cFRONTs = []string{
-	"d3ahinqqx1dy5v.cloudfront.net",
-	"d3ahinqqx1dy5v.cloudfront.net",
-	"d3ahinqqx1dy5v.cloudfront.net",
-	"d3ahinqqx1dy5v.cloudfront.net",
-	"d3ahinqqx1dy5v.cloudfront.net",
 	"d1u5p3l4wpay3k.cloudfront.net",
 	"d1u5p3l4wpay3k.cloudfront.net",
 	"d1u5p3l4wpay3k.cloudfront.net",
 	"d1u5p3l4wpay3k.cloudfront.net",
-	"d1ey8gf32ls6r2.cloudfront.net",
-	"d1ey8gf32ls6r2.cloudfront.net",
-	"d1ey8gf32ls6r2.cloudfront.net",
-	"d1ey8gf32ls6r2.cloudfront.net",
-	"d1ey8gf32ls6r2.cloudfront.net",
-	"d1ey8gf32ls6r2.cloudfront.net",
-	"d1ey8gf32ls6r2.cloudfront.net",
-	"a0.awsstatic.com",
-	"a0.awsstatic.com",
+	"cloudfront.debian.net",
+	"cloudfront.debian.net",
+	"cloudfront.debian.net",
+	"cloudfront.debian.net",
+	"cloudfront.debian.net",
+	"cloudfront.debian.net",
 	"dtnins2n354c4.cloudfront.net"}
 
 const cHOST = "dtnins2n354c4.cloudfront.net"

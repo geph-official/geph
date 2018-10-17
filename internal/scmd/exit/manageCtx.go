@@ -1,6 +1,7 @@
 package exit
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"sync"
@@ -10,13 +11,14 @@ import (
 	"golang.org/x/time/rate"
 )
 
-func (cmd *Command) getFuLimiter(uid userID) *rate.Limiter {
+func (cmd *Command) getFuLimiter(uid userID, limit int) *rate.Limiter {
 	cmd.fuTabLok.Lock()
 	defer cmd.fuTabLok.Unlock()
-	z := cmd.fuTab[uid]
+	key := fmt.Sprintf("%v-%v", uid, limit)
+	z := cmd.fuTab[key]
 	if z == nil {
-		z = rate.NewLimiter(300*1000, 500*1000*1000)
-		cmd.fuTab[uid] = z
+		z = rate.NewLimiter(rate.Limit(limit/20), 1500*1000*1000)
+		cmd.fuTab[key] = z
 	}
 	return z
 }
@@ -86,6 +88,6 @@ func (cmd *Command) manageCtx(uid userID, maxspeed int, ctx *niaucchi3.Context) 
 			log.Println("exiting manageCtx:", err.Error())
 			return
 		}
-		go cmd.proxyCommon(true, consume, limit, cmd.getFuLimiter(uid), clnt)
+		go cmd.proxyCommon(true, consume, limit, cmd.getFuLimiter(uid, maxspeed*1000), clnt)
 	}
 }

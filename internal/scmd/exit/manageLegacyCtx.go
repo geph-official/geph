@@ -78,7 +78,6 @@ func (cmd *Command) manageLegacyCtx(uid string, nct *niaucchi2.Context) {
 			log.Println("exiting manageLegacyCtx:", err.Error())
 			return
 		}
-		go cmd.proxyCommon(true, consume, limit,
-			rate.NewLimiter(rate.Limit(cmd.bwLimit*1024), 200*1024*1024), clnt)
+		go cmd.proxyCommon(true, consume, limit, clnt)
 	}
 }

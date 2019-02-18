@@ -28,10 +28,6 @@ import (
 )
 
 var cFRONTs = []string{
-	"d1u5p3l4wpay3k.cloudfront.net",
-	"d1u5p3l4wpay3k.cloudfront.net",
-	"d1u5p3l4wpay3k.cloudfront.net",
-	"d1u5p3l4wpay3k.cloudfront.net",
 	"cloudfront.debian.net",
 	"cloudfront.debian.net",
 	"cloudfront.debian.net",

@@ -12,7 +12,7 @@ import (
 )
 
 func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool,
-	limit *rate.Limiter, bkglmter *rate.Limiter,
+	limit *rate.Limiter,
 	clnt io.ReadWriteCloser) {
 	// other things
 	ctx := context.Background()
@@ -112,7 +112,6 @@ func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool,
 				return
 			}
 			limit.WaitN(ctx, n)
-			bkglmter.WaitN(ctx, n)
 			_, err = clnt.Write(buf[:n])
 			if err != nil {
 				return
@@ -129,7 +128,6 @@ func (cmd *Command) proxyCommon(doAck bool, consume func(int) bool,
 			return
 		}
 		limit.WaitN(ctx, n)
-		bkglmter.WaitN(ctx, n)
 		rmt.SetWriteDeadline(time.Now().Add(time.Minute * 30))
 		_, err = rmt.Write(buf[:n])
 		if err != nil {

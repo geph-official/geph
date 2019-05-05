@@ -8,14 +8,12 @@ import (
 	"log"
 	"net"
 	"os"
-	"strings"
 	"time"
 
 	"gopkg.in/bunsim/miniss.v1"
 	"gopkg.in/bunsim/natrium.v1"
 
 	"github.com/rensa-labs/geph/internal/niaucchi3"
-	"github.com/rensa-labs/geph/warpfront"
 	"gopkg.in/bunsim/cluttershirt.v1"
 )
 
@@ -33,96 +31,56 @@ func (cmd *Command) smConnEntry() {
 			exit := exit
 			xaxa := xaxa
 			log.Printf("%v (%x) from %v\n", xaxa.Addr, natrium.SecureHash(xaxa.Cookie, nil)[:4], exit)
-			if xaxa.Addr == "warpfront" {
-				go func() {
-					select {
-					case <-time.After(time.Second * 6):
-						log.Println("times up, falling back to", string(xaxa.Cookie))
-					case <-dedline:
-						return
-					}
-					splitted := strings.Split(string(xaxa.Cookie), ";")
-					xaxa.Addr = string(xaxa.Cookie)
-					rawconn, err := warpfront.Connect(cleanHTTP, splitted[0], splitted[1])
-					if err != nil {
-						log.Println("warpfront to", string(xaxa.Cookie), err.Error())
-						return
-					}
-					rawconn = warpfront.RWCNagle(rawconn)
-					mconn, err := miniss.Handshake(rawconn, cmd.identity)
-					if err != nil {
-						log.Println("miniss to", xaxa.Addr, err.Error())
-						rawconn.Close()
-						return
-					}
-					if natrium.CTCompare(mconn.RemotePK(), xaxa.ExitKey.ToECDH()) != 0 {
-						log.Println("miniss to", xaxa.Addr, "bad auth")
-						rawconn.Close()
-						return
-					}
-					select {
-					case retline <- mconn:
-						cmd.stats.Lock()
-						cmd.stats.netinfo.exit = exit
-						cmd.stats.netinfo.prot = "wf-ni-3"
-						cmd.stats.Unlock()
-						log.Println(xaxa.Addr, "WINNER")
-					case <-dedline:
-						log.Println(xaxa.Addr, "failed race")
-						mconn.Close()
-					}
-				}()
-			} else {
-				getWire := func() (mconn *miniss.Socket, err error) {
-					rawconn, err := net.DialTimeout("tcp", xaxa.Addr, time.Second*10)
-					if err != nil {
-						log.Println("dial to", xaxa.Addr, err.Error())
-						return
-					}
-					oconn, err := cluttershirt.Client(xaxa.Cookie, rawconn)
-					if err != nil {
-						log.Println("cluttershirt to", xaxa.Addr, err.Error())
-						rawconn.Close()
-						return
-					}
-					// 0x00 for a negotiable protocol
-					oconn.Write([]byte{0x00})
-					mconn, err = miniss.Handshake(oconn, natrium.ECDHGenerateKey())
-					if err != nil {
-						log.Println("miniss to", xaxa.Addr, err.Error())
-						oconn.Close()
-						return
-					}
-					if natrium.CTCompare(mconn.RemotePK(), xaxa.ExitKey.ToECDH()) != 0 {
-						log.Println("miniss to", xaxa.Addr, "bad auth")
-						oconn.Close()
-						err = errors.New("wrong public key")
-						return
-					}
+
+			getWire := func() (mconn *miniss.Socket, err error) {
+				rawconn, err := net.DialTimeout("tcp", xaxa.Addr, time.Second*10)
+				if err != nil {
+					log.Println("dial to", xaxa.Addr, err.Error())
 					return
 				}
-				go func() {
-					mconn, err := getWire()
-					if err != nil {
-						log.Println("getConn to", xaxa.Addr, err.Error())
-						return
-					}
-					log.Println("getWire returned")
-					select {
-					case retline <- mconn:
-						cmd.stats.Lock()
-						cmd.stats.netinfo.entry = natrium.HexEncode(
-							natrium.SecureHash(xaxa.Cookie, nil)[:8])
-						cmd.stats.netinfo.exit = exit
-						cmd.stats.netinfo.prot = "cl-ni-3"
-						cmd.stats.Unlock()
-						log.Println(xaxa.Addr, "WINNER")
-					case <-dedline:
-						log.Println(xaxa.Addr, "failed race")
-						mconn.Close()
-					}
-				}()
+				oconn, err := cluttershirt.Client(xaxa.Cookie, rawconn)
+				if err != nil {
+					log.Println("cluttershirt to", xaxa.Addr, err.Error())
+					rawconn.Close()
+					return
+				}
+				// 0x00 for a negotiable protocol
+				oconn.Write([]byte{0x00})
+				mconn, err = miniss.Handshake(oconn, natrium.ECDHGenerateKey())
+				if err != nil {
+					log.Println("miniss to", xaxa.Addr, err.Error())
+					oconn.Close()
+					return
+				}
+				if natrium.CTCompare(mconn.RemotePK(), xaxa.ExitKey.ToECDH()) != 0 {
+					log.Println("miniss to", xaxa.Addr, "bad auth")
+					oconn.Close()
+					err = errors.New("wrong public key")
+					return
+				}
+				return
 			}
+			go func() {
+				mconn, err := getWire()
+				if err != nil {
+					log.Println("getConn to", xaxa.Addr, err.Error())
+					return
+				}
+				log.Println("getWire returned")
+				select {
+				case retline <- mconn:
+					cmd.stats.Lock()
+					cmd.stats.netinfo.entry = natrium.HexEncode(
+						natrium.SecureHash(xaxa.Cookie, nil)[:8])
+					cmd.stats.netinfo.exit = exit
+					cmd.stats.netinfo.prot = "cl-ni-3"
+					cmd.stats.Unlock()
+					log.Println(xaxa.Addr, "WINNER")
+				case <-dedline:
+					log.Println(xaxa.Addr, "failed race")
+					mconn.Close()
+				}
+			}()
 		}
 	}
 

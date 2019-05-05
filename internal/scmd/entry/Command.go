@@ -27,9 +27,6 @@ var myHTTP = &http.Client{
 	Timeout: time.Second * 10,
 }
 
-const cFRONT = "a0.awsstatic.com"
-const cHOST = "dtnins2n354c4.cloudfront.net"
-
 // Command is the entry subcommand.
 type Command struct {
 }
@@ -53,17 +50,9 @@ func (cmd *Command) Execute(_ context.Context,
 	args ...interface{}) subcommands.ExitStatus {
 	rand.Seed(time.Now().UnixNano())
 	// we enter the loop
-	var choice string
-	cookie := make([]byte, 12)
-	natrium.RandBytes(cookie)
-	lsnr := listenTCP(10000 + rand.Int()%50000)
-	go cmd.doForward(lsnr, cookie, &choice)
-lRETRY:
-	resp, err := myHTTP.Get("http://icanhazip.com")
+	resp, err := myHTTP.Get("https://ipv4.icanhazip.com")
 	if err != nil {
-		log.Println("WARNING: stuck while getting our own IP:", err.Error(), "retrying in 30 secs")
-		time.Sleep(time.Second * 30)
-		goto lRETRY
+		panic("stuck while getting our own IP: " + err.Error())
 	}
 	buf := new(bytes.Buffer)
 	io.Copy(buf, resp.Body)
@@ -98,51 +87,30 @@ lRETRY:
 			log.Println("WARNING: expire time before now, ignoring")
 			continue
 		}
-		// we then see if our choice is in the given exits
-		_, ok := exinf.Exits[choice]
-		if !ok {
-			log.Println("beginning to race between the available exits...")
-			speeds := make(map[string]float64)
-			lats := make(map[string]float64)
-			for dest := range exinf.Exits {
-				t1 := time.Now()
-				resp, err = myHTTP.Get(fmt.Sprintf("http://%v:8081/test-speed", dest))
-				if err != nil {
-					log.Println("speed test TOTALLY FAILED for", dest)
-					continue
-				}
-				t2 := time.Now()
-				buf.Reset()
-				io.Copy(buf, resp.Body)
+		for choice := range exinf.Exits {
+			cookie := make([]byte, 12)
+			natrium.RandBytes(cookie)
+			lsnr, err := net.Listen("tcp4", ":0")
+			if err != nil {
+				panic(err)
+			}
+			go cmd.doForward(lsnr, cookie, choice)
+			// we then do our upload
+			var tosend struct {
+				Addr   string
+				Cookie []byte
+			}
+			tosend.Addr = fmt.Sprintf("%v:%v", myip, lsnr.Addr().(*net.TCPAddr).Port)
+			tosend.Cookie = cookie
+			bts, _ := json.Marshal(tosend)
+			resp, err = myHTTP.Post(fmt.Sprintf("http://%v:8081/update-node", choice),
+				"application/json",
+				bytes.NewReader(bts))
+			if err != nil {
+				log.Println("WARNING: failed uploading entry info to", choice)
+			} else {
 				resp.Body.Close()
-				t3 := time.Now()
-				lats[dest] = t2.Sub(t1).Seconds()
-				speeds[dest] = 8 / t3.Sub(t2).Seconds()
-				log.Println(dest, "has latency", t2.Sub(t1),
-					"and throughput", 8/t3.Sub(t2).Seconds(), "Mbps")
 			}
-			for k, v := range speeds {
-				if v > speeds[choice] {
-					choice = k
-				}
-			}
-			log.Println("our choice of exit is", choice, "based purely on throughput")
-		}
-		// we then do our upload
-		var tosend struct {
-			Addr   string
-			Cookie []byte
-		}
-		tosend.Addr = fmt.Sprintf("%v:%v", myip, lsnr.Addr().(*net.TCPAddr).Port)
-		tosend.Cookie = cookie
-		bts, _ := json.Marshal(tosend)
-		resp, err = myHTTP.Post(fmt.Sprintf("http://%v:8081/update-node", choice),
-			"application/json",
-			bytes.NewReader(bts))
-		if err != nil {
-			log.Println("WARNING: failed uploading entry info to", choice)
-		} else {
-			resp.Body.Close()
 		}
 		time.Sleep(time.Second * 30)
 	}

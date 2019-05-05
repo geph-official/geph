@@ -14,7 +14,7 @@ import (
 
 type userID int
 
-func toLegacyUid(b []byte) string {
+func toLegacyUID(b []byte) string {
 	uid := strings.ToLower(
 		base32.StdEncoding.EncodeToString(
 			natrium.SecureHash(b, nil)[:10]))
@@ -34,10 +34,10 @@ func (cmd *Command) authUser(uname, pwd string) (uid userID, limit int, err erro
 	if err == sql.ErrNoRows {
 		err = nil
 		uPriv := common.DeriveKey(uname, pwd).ToECDH()
-		legacyUid := toLegacyUid(uPriv.PublicKey())
-		log.Println("attempting to upgrade legacy user", uname, legacyUid)
+		legacyUID := toLegacyUID(uPriv.PublicKey())
+		log.Println("attempting to upgrade legacy user", uname, legacyUID)
 		var mbs int
-		err = tx.QueryRow("SELECT mbs FROM accbalances WHERE uid = $1", legacyUid).Scan(&mbs)
+		err = tx.QueryRow("SELECT mbs FROM accbalances WHERE uid = $1", legacyUID).Scan(&mbs)
 		if err != nil {
 			return
 		}

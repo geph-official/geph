@@ -14,9 +14,10 @@ import (
 )
 
 func (cmd *Command) getExitNodes() (nds map[string][]byte, err error) {
+	FRONT, REAL := getFrontDomain()
 	// request the data
-	req, _ := http.NewRequest("GET", fmt.Sprintf("https://%v/exit-info", cmd.getFront()), nil)
-	req.Host = cHOST
+	req, _ := http.NewRequest("GET", fmt.Sprintf("https://%v/exit-info", FRONT), nil)
+	req.Host = REAL
 	resp, err := cleanHTTP.Do(req)
 	if err != nil {
 		return

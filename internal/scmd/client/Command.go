@@ -27,17 +27,6 @@ import (
 	_ "gopkg.in/mattn/go-sqlite3.v1"
 )
 
-var cFRONTs = []string{
-	"cloudfront.debian.net",
-	"cloudfront.debian.net",
-	"cloudfront.debian.net",
-	"cloudfront.debian.net",
-	"cloudfront.debian.net",
-	"cloudfront.debian.net",
-	"dtnins2n354c4.cloudfront.net"}
-
-const cHOST = "dtnins2n354c4.cloudfront.net"
-
 var binderPub natrium.EdDSAPublic
 
 func init() {
@@ -49,10 +38,9 @@ var cleanHTTP = &http.Client{
 		Proxy:               nil,
 		TLSHandshakeTimeout: time.Second * 30,
 		IdleConnTimeout:     time.Second * 10,
-		MaxIdleConns:        16,
-		MaxIdleConnsPerHost: 16,
+		DisableKeepAlives:   true,
 	},
-	Timeout: time.Second * 200,
+	Timeout: time.Second * 30,
 }
 
 type entryInfo struct {
@@ -135,6 +123,8 @@ func (cmd *Command) Execute(_ context.Context,
 	args ...interface{}) subcommands.ExitStatus {
 	os.Setenv("HTTP_PROXY", "")
 	os.Setenv("HTTPS_PROXY", "")
+	os.Setenv("http_proxy", "")
+	os.Setenv("https_proxy", "")
 	// Initialize stats
 	cmd.stats.status = "connecting"
 	cmd.stats.stTime = time.Now()

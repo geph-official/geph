@@ -6,23 +6,19 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 
 	"gopkg.in/bunsim/natrium.v1"
 )
 
-func (cmd *Command) getFront() string {
-	return cFRONTs[rand.Int()%len(cFRONTs)]
-}
-
 func (cmd *Command) getEntryNodes(exits map[string][]byte) map[string][]entryInfo {
+	FRONT, REAL := getFrontDomain()
 	entries := make(map[string][]entryInfo)
 	var err error
 	for ext, kee := range exits {
 		req, _ := http.NewRequest("POST",
-			fmt.Sprintf("https://%v/exits/%v:8081/get-nodes", cmd.getFront(), ext), nil)
-		req.Host = cHOST
+			fmt.Sprintf("https://%v/exits/%v:8081/get-nodes", FRONT, ext), nil)
+		req.Host = REAL
 		var resp *http.Response
 		resp, err = cleanHTTP.Do(req)
 		if err != nil {

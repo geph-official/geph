@@ -92,9 +92,6 @@ func (cmd *Command) Execute(_ context.Context,
 
 	// run the proxy
 	go cmd.doProxy()
-	if cmd.wfFront != "" {
-		go cmd.doFront()
-	}
 	mux := http.NewServeMux()
 	hserv := &http.Server{
 		ReadTimeout:    30 * time.Second,

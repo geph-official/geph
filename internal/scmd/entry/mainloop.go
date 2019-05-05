@@ -12,7 +12,7 @@ import (
 func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest string) {
 	defer lsnr.Close()
 	go func() {
-		time.Sleep(time.Hour * 48)
+		time.Sleep(time.Hour * 2)
 		lsnr.Close()
 	}()
 	for {

@@ -88,6 +88,7 @@ func (cmd *Command) Execute(_ context.Context,
 			continue
 		}
 		for choice := range exinf.Exits {
+			choice := choice
 			cookie := make([]byte, 12)
 			natrium.RandBytes(cookie)
 			lsnr, err := net.Listen("tcp4", ":0")
@@ -104,17 +105,19 @@ func (cmd *Command) Execute(_ context.Context,
 			log.Printf("reverse-proxy %v => %v", tosend.Addr, choice)
 			tosend.Cookie = cookie
 			bts, _ := json.Marshal(tosend)
-			for {
-				resp, err = myHTTP.Post(fmt.Sprintf("http://%v:8081/update-node", choice),
-					"application/json",
-					bytes.NewReader(bts))
-				if err != nil {
-					log.Println("WARNING: failed uploading entry info to", choice)
-				} else {
-					resp.Body.Close()
+			go func() {
+				for i := 0; i < 120; i++ {
+					resp, err = myHTTP.Post(fmt.Sprintf("http://%v:8081/update-node", choice),
+						"application/json",
+						bytes.NewReader(bts))
+					if err != nil {
+						log.Println("WARNING: failed uploading entry info to", choice)
+					} else {
+						resp.Body.Close()
+					}
+					time.Sleep(time.Second * 30)
 				}
-				time.Sleep(time.Second * 30)
-			}
+			}()
 		}
 		time.Sleep(time.Hour)
 	}

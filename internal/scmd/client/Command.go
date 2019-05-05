@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/base32"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -108,9 +107,6 @@ func (*Command) Usage() string { return "" }
 func (cmd *Command) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&cmd.uname, "uname", "test", "username")
 	f.StringVar(&cmd.pwd, "pwd", "removekebab", "password")
-	f.StringVar(&cmd.cachedir, "cachedir", "", "cache directory; if empty then no cache is used")
-	f.BoolVar(&cmd.powersave, "powersave", true,
-		"optimize for saving power on mobile devices, at the cost of some performance")
 
 	f.StringVar(&cmd.wliststr, "whitelist", "", "comma-separated countries to not proxy (example: \"CN,US\")")
 	f.StringVar(&cmd.geodbloc, "geodb", "",
@@ -169,19 +165,7 @@ func (cmd *Command) Execute(_ context.Context,
 	}
 	go cmd.doSocks(socksListener)
 	// try to connect to the cache first
-	if cmd.cachedir != "" {
-		var err error
-		cmd.cdb, err = sql.Open("sqlite3", fmt.Sprintf("%v/%x.db", cmd.cachedir,
-			natrium.SecureHash([]byte(cmd.uname), []byte(cmd.pwd))[:8]))
-		if err != nil {
-			panic(err.Error())
-		}
-		// just a simple key-value pair lol
-		cmd.cdb.Exec("CREATE TABLE IF NOT EXISTS main (k UNIQUE NOT NULL, v)")
-		cmd.ecache = &sqliteEntryCache{cmd.cdb}
-	} else {
-		cmd.ecache = &memEntryCache{}
-	}
+	cmd.ecache = &memEntryCache{}
 	// Derive the identity
 	if cmd.identity == nil {
 		cmd.identity = common.DeriveKey(cmd.uname, cmd.pwd).ToECDH()

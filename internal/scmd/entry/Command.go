@@ -112,6 +112,6 @@ func (cmd *Command) Execute(_ context.Context,
 				resp.Body.Close()
 			}
 		}
-		time.Sleep(time.Second * 30)
+		time.Sleep(time.Hour * 24)
 	}
 }

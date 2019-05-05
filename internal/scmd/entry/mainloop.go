@@ -3,7 +3,6 @@ package entry
 import (
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"time"
 
@@ -11,6 +10,11 @@ import (
 )
 
 func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest string) {
+	defer lsnr.Close()
+	go func() {
+		time.Sleep(time.Hour * 48)
+		lsnr.Close()
+	}()
 	for {
 		raw, err := lsnr.Accept()
 		if err != nil {
@@ -36,7 +40,6 @@ func (cmd *Command) doForward(lsnr net.Listener, cookie []byte, dest string) {
 			}
 			remote, err = net.DialTimeout("tcp", fmt.Sprintf("%v:2379", dest), time.Second*10)
 			if err != nil {
-				log.Println("WARNING: failed to forward to", dest, ":", err.Error())
 				return
 			}
 			remote.Write(lol)

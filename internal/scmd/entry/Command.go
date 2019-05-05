@@ -104,13 +104,16 @@ func (cmd *Command) Execute(_ context.Context,
 			log.Printf("reverse-proxy %v => %v", tosend.Addr, choice)
 			tosend.Cookie = cookie
 			bts, _ := json.Marshal(tosend)
-			resp, err = myHTTP.Post(fmt.Sprintf("http://%v:8081/update-node", choice),
-				"application/json",
-				bytes.NewReader(bts))
-			if err != nil {
-				log.Println("WARNING: failed uploading entry info to", choice)
-			} else {
-				resp.Body.Close()
+			for {
+				resp, err = myHTTP.Post(fmt.Sprintf("http://%v:8081/update-node", choice),
+					"application/json",
+					bytes.NewReader(bts))
+				if err != nil {
+					log.Println("WARNING: failed uploading entry info to", choice)
+				} else {
+					resp.Body.Close()
+				}
+				time.Sleep(time.Second * 30)
 			}
 		}
 		time.Sleep(time.Hour)

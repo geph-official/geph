@@ -101,7 +101,7 @@ func (cmd *Command) Execute(_ context.Context,
 				Cookie []byte
 			}
 			tosend.Addr = fmt.Sprintf("%v:%v", myip, lsnr.Addr().(*net.TCPAddr).Port)
-			log.Println("reverse-proxy %v => %v", tosend.Addr, choice)
+			log.Printf("reverse-proxy %v => %v", tosend.Addr, choice)
 			tosend.Cookie = cookie
 			bts, _ := json.Marshal(tosend)
 			resp, err = myHTTP.Post(fmt.Sprintf("http://%v:8081/update-node", choice),

@@ -106,7 +106,7 @@ func (cmd *Command) Execute(_ context.Context,
 			tosend.Cookie = cookie
 			bts, _ := json.Marshal(tosend)
 			go func() {
-				for i := 0; i < 120; i++ {
+				for i := 0; i < 120*24; i++ {
 					resp, err = myHTTP.Post(fmt.Sprintf("http://%v:8081/update-node", choice),
 						"application/json",
 						bytes.NewReader(bts))
@@ -119,6 +119,6 @@ func (cmd *Command) Execute(_ context.Context,
 				}
 			}()
 		}
-		time.Sleep(time.Hour)
+		time.Sleep(time.Hour * 24)
 	}
 }

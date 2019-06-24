@@ -2,6 +2,7 @@ package client
 
 import (
 	"io"
+	"log"
 	"net"
 	"strings"
 	"sync"
@@ -101,6 +102,7 @@ func (cmd *Command) doDNS() {
 	}
 	err := serv.ListenAndServe()
 	if err != nil {
+		log.Println("Uh oh!")
 		panic(err.Error())
 	}
 }

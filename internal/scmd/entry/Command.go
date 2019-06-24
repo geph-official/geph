@@ -50,7 +50,7 @@ func (cmd *Command) Execute(_ context.Context,
 	args ...interface{}) subcommands.ExitStatus {
 	rand.Seed(time.Now().UnixNano())
 	// we enter the loop
-	resp, err := myHTTP.Get("https://ipv4.icanhazip.com")
+	resp, err := myHTTP.Get("https://checkip.amazonaws.com")
 	if err != nil {
 		panic("stuck while getting our own IP: " + err.Error())
 	}

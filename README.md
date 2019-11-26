@@ -1,3 +1,10 @@
+## NOTE: This repo is obsolete. 這個repo已經過時！
+
+See https://github.com/geph-official/geph2 for newer versions
+
+新版本請見 https://github.com/geph-official/geph2 
+
+
 ## Official repository for Geph core daemon
 
 This repository contains the source code for the platform-independent, headless daemon `geph` that is included in all the platform-specific apps and implements all the anti-censorship magic. It's also what runs on our server infrastructure.
